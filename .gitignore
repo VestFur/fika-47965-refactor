@@ -1,21 +1,26 @@
-# ===== 只跟踪 Fika 源码（source/）；其余一律不入库 =====
-# 发布版走 GitHub Releases，不放在仓库里
-release/
-analysis/
-*.md
-!README.md
-*.txt
-*.mjs
-*.json
-*.bak
-*.bak-*
-*.restore-*
+# ===== 仓库只放源码；发布物走 GitHub Releases =====
+/release/
+/analysis/
+/README-refactor.md
+/TARGETS.md
+/REFACTOR-TRACKER.md
+/*.md
+!/README.md
+/*.txt
+/*.mjs
+/*.json
+/*.rar
+# ===== 构建产物与本地备份 =====
 **/bin/
 **/obj/
-.build/
 **/staging/
 **/staging-*/
+.build/
+**/*.bak
+**/*.bak-*
+**/*.bak.*
+**/*.restore-*
+*.user
+.vs/
 *.log
 logs/
-.vs/
-*.user

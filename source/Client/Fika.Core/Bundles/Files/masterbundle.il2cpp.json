@@ -1,0 +1,81 @@
+{
+  "sourceSha256": "d2f34bd08bf07b82191561c13d9b4ddc4d94ff2ccafcf19ceb176ef8448d350b",
+  "outputSha256": "93111a3e9fb4c10e636ea8fb136db5a96219ac463d7a3192980c7b4747e28952",
+  "scripts": [
+    {
+      "pathId": -8171669110307393480,
+      "class": "LoadingScreenPlayer",
+      "namespace": ""
+    },
+    {
+      "pathId": -6672012628412638837,
+      "class": "PlayerPlateUI",
+      "namespace": ""
+    },
+    {
+      "pathId": -5237042376879249533,
+      "class": "AdminSettingsUI",
+      "namespace": ""
+    },
+    {
+      "pathId": -4434489960153137178,
+      "class": "FreecamUI",
+      "namespace": ""
+    },
+    {
+      "pathId": -4362660953104563009,
+      "class": "DebugUI",
+      "namespace": ""
+    },
+    {
+      "pathId": -4047014875970591403,
+      "class": "FikaChatUI",
+      "namespace": ""
+    },
+    {
+      "pathId": -1137075640100275423,
+      "class": "ListPlayer",
+      "namespace": ""
+    },
+    {
+      "pathId": -2532456854940805,
+      "class": "RaidAdminUI",
+      "namespace": ""
+    },
+    {
+      "pathId": 335435098281727766,
+      "class": "LoadingScreenUI",
+      "namespace": ""
+    },
+    {
+      "pathId": 2866445612729024247,
+      "class": "ButtonHandler",
+      "namespace": ""
+    },
+    {
+      "pathId": 2920873766601995344,
+      "class": "FikaMasterScript",
+      "namespace": ""
+    },
+    {
+      "pathId": 2937221319475866163,
+      "class": "MatchMakerUI",
+      "namespace": ""
+    },
+    {
+      "pathId": 6181843426439016085,
+      "class": "MainMenuUIPlayer",
+      "namespace": ""
+    },
+    {
+      "pathId": 7116872336870268283,
+      "class": "SendItemUI",
+      "namespace": ""
+    },
+    {
+      "pathId": 8559808135557536888,
+      "class": "MainMenuUI",
+      "namespace": ""
+    }
+  ]
+}

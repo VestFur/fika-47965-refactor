@@ -1,7 +1,0 @@
-**/bin/
-**/obj/
-Client/References/
-**/.vs/
-**/*.user
-**/*.cache
-artifacts/
