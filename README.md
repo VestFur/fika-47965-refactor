@@ -3,6 +3,7 @@
 Fika 联机 mod 的重构源码，目标环境 **SPT 5.0 / EFT 1.2.0.47965**（Fika 基线 3.0.4）。
 
 > **License**: [CC BY-NC-SA 4.0](LICENSE) — 非商业用途；修改与再分发须沿用同一协议并署名原作者。
+> `SPDX-License-Identifier: CC-BY-NC-SA-4.0`（子目录中的 `LICENSE-*.md` 是随源码分发的第三方许可，各自适用）
 > 本仓库是 [Project Fika](https://github.com/project-fika/Fika-Plugin) 的**修改版（派生作品）**，改动见 [MODIFICATIONS.md](MODIFICATIONS.md)、署名见 [NOTICE](NOTICE)。
 > 不含任何 Battlestate Games 的代码、资产或游戏文件。
 
