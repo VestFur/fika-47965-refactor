@@ -343,6 +343,8 @@ internal static class RaidInteractionSync
 
         // (2026-10-27 W48 / N2) 主机卡在过场里的兜底：等不到的观众确认不能无限期挂着。
         CutsceneStallWatchdog();
+        // 主机的过场进程消失后没有客机本地触发器的 EndCutscene 收口，单独兜底恢复伤害状态。
+        HostCutsceneRestoreWatchdog();
         if (Manager?.CoopHandler?.MyPlayer is { } armoryPlayer && TerminalArmory.Applies(World?.LocationId))
         {
             TerminalArmory.Tick(World, armoryPlayer);
@@ -810,6 +812,11 @@ internal static class RaidInteractionSync
     internal static void StartCutscene(CutsceneProcess process, bool forceMode, float initTime)
     {
         if (!FikaBackendUtils.IsServer || World == null || process == null || Cutscenes.ContainsKey(process.processId)) return;
+        // Mark the host cutscene before its process table can disappear. HostCutsceneRestoreWatchdog then
+        // restores the damage state even when the process ends before a Tick ever observed it.
+        _hostCutsceneSeen = true;
+        _hostCutsceneGoneAt = 0f;
+        _hostCutsceneRestored = false;
         // A process the rally trigger started belongs to every participant: a peer the world did not count
         // when the process was created would otherwise be left outside a cutscene the host is inside, and its
         // skip vote could never be completed (analysis/rally-gate-deadlock).
@@ -1012,8 +1019,9 @@ internal static class RaidInteractionSync
     }
 
     /// <summary>
-    /// (2026-10-27 W48 / N4) 把本机的伤害系数恢复成 1。只在"过场已经结束、玩家还活着、还没撤离、当前确实是 0"
-    /// 时动手；每次动作一行日志。返回是否真的改过。
+    /// (2026-10-27 W48 / N4) 把本机的伤害保护状态恢复成正常值。只在"过场已经结束、玩家还活着、还没撤离"
+    /// 时动手；DamageCoeff 和 DamageMultiplier 都要恢复，并解除原生过场暂停的 effects。每次动作一行日志。
+    /// 返回是否真的改过。
     /// </summary>
     internal static bool RestoreLocalDamageAfterCutscene(string source)
     {
@@ -1021,19 +1029,47 @@ internal static class RaidInteractionSync
         {
             var player = LocalPlayer;
             if (player?.ActiveHealthController == null) return false;
+            if (player.Downed || player.HasDied) return false;
             if (player.HealthController != null && !player.HealthController.IsAlive) return false;
             if (Manager?.CoopHandler?.ExtractedPlayers != null &&
                 Manager.CoopHandler.ExtractedPlayers.Contains(player.NetId)) return false;
-            var coeff = player.ActiveHealthController.DamageCoeff;
-            if (coeff > 0.999f) return false;
-            player.ActiveHealthController.SetDamageCoeff(1f);
-            FikaGlobals.LogInfo($"[CgDiag] damage-coeff restored to 1 ({source}) was={coeff:F2}",
-                "RaidInteractionSync");
+            // A transit replaces the level; restoring there would run on the world that is already going down.
+            if (FikaBackendUtils.IsTransit) return false;
+
+            var health = player.ActiveHealthController;
+            var coeff = health.DamageCoeff;
+            var multiplier = health.DamageMultiplier;
+            if (coeff > 0.999f && multiplier > 0.999f) return false;
+
+            try
+            {
+                player.UnpauseAllEffectsOnPlayer();
+            }
+            catch (Exception exception)
+            {
+                FikaGlobals.LogWarning($"[CgDiag] cutscene-restore unpause threw ({source}): " +
+                    $"{exception.GetType().Name}: {exception.Message}", "RaidInteractionSync");
+            }
+
+            if (coeff <= 0.999f)
+            {
+                health.SetDamageCoeff(1f);
+            }
+
+            if (multiplier <= 0.999f)
+            {
+                health.DamageMultiplier = 1f;
+            }
+
+            FikaGlobals.LogInfo($"[CgDiag] cutscene-restore ({source}) role=" +
+                $"{(FikaBackendUtils.IsServer ? "host" : "client")} " +
+                $"coeff={coeff:F2}->{health.DamageCoeff:F2} " +
+                $"mult={multiplier:F2}->{health.DamageMultiplier:F2}", "RaidInteractionSync");
             return true;
         }
         catch (Exception exception)
         {
-            FikaGlobals.LogWarning($"[CgDiag] damage-coeff restore threw ({source}): " +
+            FikaGlobals.LogWarning($"[CgDiag] cutscene-restore threw ({source}): " +
                 $"{exception.GetType().Name}: {exception.Message}", "RaidInteractionSync");
             return false;
         }
@@ -1041,6 +1077,63 @@ internal static class RaidInteractionSync
 
     /// <summary>(2026-10-27 W48 / N2) 广播出去的过场进程开始时间，用于"主机被卡在过场里"的看门狗。</summary>
     private static readonly Dictionary<int, float> BroadcastAt = new();
+
+    // ---- Host-side restore watchdog ------------------------------------------------------------
+    // The client gets a native EndCutscene from FikaLocalCutsceneTrigger and therefore a reliable
+    // restore hook. The host uses the native process lifecycle: when that process disappears without
+    // reaching EndCutscene (or its object is already gone in CutsceneStallWatchdog), the host alone
+    // kept DamageCoeff/DamageMultiplier at their cutscene values. Watch the host's process table and
+    // restore once after the last process is gone.
+    private const float HostCutsceneRestoreDelaySeconds = 2f;
+    private static bool _hostCutsceneSeen;
+    private static float _hostCutsceneGoneAt;
+    private static bool _hostCutsceneRestored;
+
+    private static bool AnyCutsceneProcessActive()
+    {
+        try
+        {
+            var world = World;
+            if (world == null) return false;
+            if (world.CutscenesClientController != null && world.CutscenesClientController._cutsceneProcessId > 0)
+            {
+                return true;
+            }
+            var processes = world.CutscenesServerController?._cutsceneProcesses;
+            return processes != null && processes.Count > 0;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static void HostCutsceneRestoreWatchdog()
+    {
+        if (!FikaBackendUtils.IsServer || FikaBackendUtils.IsHeadless) return;
+
+        var now = UnityEngine.Time.unscaledTime;
+        if (AnyCutsceneProcessActive())
+        {
+            _hostCutsceneSeen = true;
+            _hostCutsceneGoneAt = 0f;
+            _hostCutsceneRestored = false;
+            return;
+        }
+
+        if (!_hostCutsceneSeen || _hostCutsceneRestored) return;
+
+        if (_hostCutsceneGoneAt <= 0f)
+        {
+            _hostCutsceneGoneAt = now;
+            return;
+        }
+
+        if (now - _hostCutsceneGoneAt < HostCutsceneRestoreDelaySeconds) return;
+
+        _hostCutsceneRestored = true;
+        RestoreLocalDamageAfterCutscene("host-process-gone");
+    }
 
     /// <summary>(2026-10-27 W48 / N2) 进程序对象，看门狗强制收尾时要用它调原生 EndCutscene。</summary>
     private static readonly Dictionary<int, CutsceneProcess> BroadcastProcesses = new();
@@ -1104,6 +1197,10 @@ internal static class RaidInteractionSync
             FikaGlobals.LogInfo($"[CgDiag] cutscene-stall-watchdog pid={processId} waited>={CutsceneStallSeconds:F0}s " +
                 $"end={ended} - a viewer never acknowledged; shut the process down so the black screen and the " +
                 "cutscene immunity cannot hold the raid", "RaidInteractionSync");
+            // EndCutscene normally runs the restore through its postfix, but when the process object is
+            // already gone (ended == "skipped") that call never happens. Restore unconditionally here;
+            // RestoreLocalDamageAfterCutscene is idempotent.
+            RestoreLocalDamageAfterCutscene("stall-watchdog:" + processId);
         }
     }
 
