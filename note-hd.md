@@ -1,2 +1,0 @@
-
-| 2026-10-21 | 无头显示模式回迁 | 对比确认重构服务端相对原版只删除了“无头主机显示模式”一组（`FikaConfigHeadlessDisplay`、`HeadlessDisplayModes`、`BuildDisplayArguments`、`ResolveDisplay`、`Normalize`、`HeadlessLaunchSettings.Display`）。已从原版回迁 4 个文件：`Models/Fika/Config/FikaConfigHeadless.cs`、`Models/Fika/HeadlessLaunchSettings.cs`、`Services/Headless/HeadlessLaunchHelper.cs`、`Services/Headless/HeadlessProfileService.cs`；`FikaWebApp/Models/FikaConfigHeadless.cs` 两边本已一致（36 行）。服务端构建 0 error |

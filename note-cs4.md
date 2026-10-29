@@ -1,2 +1,0 @@
-
-| 2026-10-19 | W5-cutscene-sync-4 `Fika-47965-refactor-20261019-W5-cutscene-sync-4.zip` | **找到真正的入口**：地图剧情触发器走的是 `EFT.GameTriggers.HandlerStartCutscene.OnTrigger` → `CutscenesServerController.StartCutsceneWithTime(cutsceneId, playersId, fixedTime, forceMode)`（interop dump 94633），**不经过** `StartCutscene`，所以原先的补丁对它完全不生效 → 主机本地播放、从不广播。新增 `CutsceneStartWithTimeSyncPatch` 打在 `StartCutsceneWithTime` 上，Postfix 调 `RaidInteractionSync.DispatchByCutsceneId(cutsceneId)`：把该 cutscene 下尚未广播的 process 用既有 `StartCutscene` 发出去，并在发之前用 `FilterViewersToSession` 把原生观众表裁到会话真实玩家（1/8 → 1/2） |

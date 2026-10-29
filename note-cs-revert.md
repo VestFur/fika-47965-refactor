@@ -1,2 +1,0 @@
-
-| 2026-10-19 | W5-cutscene-revert `Fika-47965-refactor-20261019-W5-cutscene-revert.zip` | 按"参考原 47965 已有补丁、最小实现"回调：**恢复** `FikaLocalCutsceneTrigger` 原机制（`UseNativeClientTrigger=true`、`SingleLocalViewer=true`：客机用本机原生链启动同一段 CG，并把座位表裁成**本机玩家 1/1**，于是原生结束计数立即满足、时间轴结束动作（门）在客机本地执行）；**删除**我上一轮加的 `StartCutsceneWithTime` 补丁、`DispatchByCutsceneId/DispatchNativeProcess/IsDispatched`、开局补扫逻辑与客机收包探针日志。保留：客机 `TransitPoint` 需求判定补丁、原生 `FindMapTimelinesBank()` 初始化、主机座位表裁剪 |

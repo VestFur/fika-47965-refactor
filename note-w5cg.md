@@ -1,2 +1,0 @@
-
-| 2026-10-19 | W5-intro-cg `Fika-47965-refactor-20261019-W5-intro-cg.zip` | 终点站开局 CG 无画面：新增 `CutsceneBoundary.TickPlayback(GameWorld)`（由 `RaidInteractionSync.Tick` 每帧调用）——本机首次见到 process 时泵一次、pending start（`_needStartTimeline/_waitFramesLeft`）期间 0.25s 泵一次、进程存在时按 `afterStartTimeElapsed` 是否推进决定是否补泵；同帧去重、空值/无 bank 直接返回。依据：47965 interop 里两条 `OnUpdate` 均 `CallerCount 0`（引擎不调），旧实现唯一有效手段就是泵。三项目 0 error |

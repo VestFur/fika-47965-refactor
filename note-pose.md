@@ -1,3 +1,0 @@
-
-| 2026-10-20 | W7-pose `Fika-47965-refactor-20261020-W7-pose.zip` | **Pose Write Guards 整体删除**：删除 `Main/Utils/PoseWriteGuards.cs`、配置项“姿态写入守卫”与其接线；`ObservedPlayer` 五处 `!PoseWriteGuards.Enabled || …` / `PoseWriteGuards.Enabled && …` 守卫条件一并去掉（改为每次直写），`ObservedMovementContext.SetCharacterMovementSpeed` 同理。构建 0 error。HUD 原生恢复本轮尝试后回退（见下条） |
-| 2026-10-20 | HUD 修复记录（未完成） | 目标是改用原生 `GamePlayerOwner.InitBattleUIScreen()/ShowBattleUIScreen()`（`CoopGame.cs:1686-1693` 已验证可用的组合）替代 `BaseGameController.RestoreInRaidHudRoutine` 里的手工复刻语句；但 `BaseGameController` 里的 `GamePlayerOwner` 是**类型**（静态访问 `MyPlayer`），拿不到实例 owner，编译报 CS0119/CS0120，已回退保持构建绿色。下一步：先确认 `BaseGameController` 持有的 owner 实例字段名（或经 `_abstractGame.PlayerOwner`），再替换 |

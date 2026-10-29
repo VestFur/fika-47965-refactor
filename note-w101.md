@@ -1,2 +1,0 @@
-
-| 2026-10-21 | W10.1 `Fika-47965-refactor-20261021-W10.1.zip` | 实测反馈两项：①**破冰船过完后主机无敌**——`EndCutscene` 主机分支在按参与者释放之外，补 `ReleaseLocalSniperImmunity("host cutscene end")`（参与者映射可能漏掉主机自己的 raidId）；②**终点站客机仍“无法使用转移功能”**——`InteractWithTransit` 的 `!point.Enabled` 不再一律拒绝：若请求者已在本局且 `_playersInTransitZone[profileId] == 该点`，主机侧 `point.Enabled = true` 后继续（access/entry/group/quest 闸门不变），并写 `[SyncDiag] host-enabled point=N reason=interaction-in-zone`。构建 0 error |

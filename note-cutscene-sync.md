@@ -1,2 +1,0 @@
-
-| 2026-10-18 | W5-cutscene-sync `Fika-47965-refactor-20261018-W5-cutscene-sync.zip` | 破冰船"只有主机触发 CG + 等待玩家中 2/8"：①主机 `CutsceneBoundary.TickPlayback` 每 0.25s 扫描 `CutscenesServerController._cutsceneProcesses`，把**地图触发器原生创建、从未广播**的 process 通过既有 `StartCutscene` 补发给全房（这正是 `SkipWatchdog/CloseSilentViewers` 生效的前提，之前 `Cutscenes` 为空所以看门狗空转 → 原生计数器永远 2/8）；②`CutsceneStartPacket.NetIds` 过滤掉无法映射为会话内 net id 的观众（机器人/外队），避免客机把自己从该场景里过滤掉；未新增功能，仅接通既有链路 |

@@ -1,2 +1,0 @@
-
-| 2026-10-20 | W8-items `Fika-47965-refactor-20261020-W8-items.zip` | 物品变“未检视”彻查结论：全树只有两处登记“已检视”——`ClientInventoryController.MarkOperationItemsKnown`（本地执行后，:659）与 `BaseInventoryController.SetItemAsKnown`（:153）；而 `ClientInventoryOperationHandler` 在**主机确认 Succeeded 之后**会 `SyncInventoryToProfile()`（:112）重新读取库存，这份 profile 不携带检索控制器的 known 集合，于是该次操作产生的物品（换弹弹匣、卸下武器、拆分堆叠）在下次打开背包时回到“未检视”。修复：在 `SyncInventoryToProfile()` 之后**重新登记** `MarkOperationItemsKnown(Operation)`（失败只告警，不影响操作）。构建 0 error |

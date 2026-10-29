@@ -1,2 +1,0 @@
-
-| 2026-10-19 | W6-transit-sync `Fika-47965-refactor-20261019-W6-transit-sync.zip` | **撤回**"在点内即就绪"的放宽（`EveryoneInteracted` 恢复只认 `_interactedPlayers`，严格门保持原语义）；改为真正修同步：客机进入转移点时调用既有 `MirrorPointEnabled(point.parameters.id, "entered the point")`，把本机那个来自开局快照的 `Enabled=false` 镜像为主机已开启状态 —— 此前正是这个 false 让客机显示"无法使用转移点"、并阻断原生按下链（不产生 `TransitInteractPacket`），主机的 `_interactedPlayers` 因此永远缺客机。访问权限/入场条件/倒计时仍全部由主机校验 |

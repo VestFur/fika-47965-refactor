@@ -1,2 +1,0 @@
-
-| 2026-10-20 | W7-cfg-fix `Fika-47965-refactor-20261020-W7-cfg-fix.zip` | 用 `[Config] bind` 序号日志定位到崩溃点：最后一条成功绑定是 **bind 98 `Coop/过场：原生每帧钩子`**，其后紧跟 `CutsceneNativeTickHook.SettingChanged += (_, _) =>` —— 这个**空壳 lambda 把下一条语句吞成了它的函数体**（`RallySkipVoteTimeoutSeconds = SetupSetting(...)` 变成了事件处理器内部语句），于是两个配置项在 SetupConfig 里从未被赋值、保持 `null`，后续 `.Value` 读即 NRE。修复：整块删除 `CutsceneNativeTickHook` 与 `RallySkipVoteTimeoutSeconds`（属性 + SetupSetting + 悬空处理器），并把被吞掉的 `InertOutsideFikaRaids = SetupSetting(...)` 释放为顶层语句。静态校验：108 个属性中仅 `LastVersion` 无 SetupSetting（非绑定项），其余全部有赋值 |
