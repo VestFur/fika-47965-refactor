@@ -1,0 +1,2 @@
+
+| 2026-10-20 | 配置项清理（构建已恢复） | FikaConfig.cs 在批量删除时被脚本破坏，已从 `mods/fika-47965/source` 原始版恢复并按“符号是否存在”重建：删除 11 个目标选项（StrictInventorySync / GroundLootPickupBypass / GroundLootPickupAutoFallback / MirrorOfflineSpawnFlags / EnableAmbientBotCapFallback / RallySkipVoteTimeoutSeconds / TransitCountdownFallbackSeconds / TransitSuppressCoLocatedExits / CutsceneNativeTickHook / WriteOnlinePlayerCounter / TransitAbortWhenSomeoneLeaves），并清掉指向已删除组件的接线（FikaRallyGate 15 处、TransitRecovery 12 处、残留 handler 与 revive 补丁块）。构建 **0 error** |

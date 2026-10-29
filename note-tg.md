@@ -1,0 +1,2 @@
+
+| 2026-10-19 | W6-transit-gate `Fika-47965-refactor-20261019-W6-transit-gate.zip` | "主机 noallteammate / 客机无法使用转移"根因：`TransitStartGate` 要求"每人都**按下过**"（`_interactedPlayers` 只在原生按下链走完时写入），而客机的原生按下链本就不完整 → 主机的严格门对**所有人**（含主机自己）都回答 NonAllTeammates。改为**站在点内即满足**：`EveryoneInteracted` 把 `_playersInTransitZone`（由交互包与在场包共同写入）同时当作"已就绪"证据传给 `DescribeNotReady`。语义仍由 `Transit: Require All Teammates Ready` 总开关控制；关掉时行为不变 |

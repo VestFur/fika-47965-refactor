@@ -1,0 +1,2 @@
+
+| 2026-10-19 | W6-transit-press \`Fika-47965-refactor-20261019-W6-transit-press.zip\` | 按反馈修正两处：①"重复按下"判断错位——玩家进入点位时已被主机区域上报注册进 transitPlayers，所以客机的第一次按下就落进 already-registered 分支并被回 InactivePoint；现在该分支不再拒绝，而是走正常路径 RecordInteraction → CheckForPlayers → EveryoneInteracted，只有主机可 BeginCountdown；②提示改为源头控制：ClearLocalInteraction 在隐藏原生通知的同时调用 LocalPlayer.UpdateInteractionCast() 重算世界交互投射，因此离开点位与交互完成(Confirm)两条路径都会真正收掉提示，只有主机 Show 时才重新出现 |

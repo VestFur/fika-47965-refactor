@@ -1,0 +1,2 @@
+
+| 2026-10-19 | W6-transit-inactive `Fika-47965-refactor-20261019-W6-transit-inactive.zip` | 日志实证（`LogOutput.log`）：客户机 `[TransitDiag] client answer type=Show point=25`（262954 行）后紧接 `type=InactivePoint point=25`（267257 行）→ 主机把**已经注册过的玩家**的重复按下当成"不可用"回给客机，客机因此显示"无法使用转移功能"。修复：`InteractWithTransit` 的 `already-registered` 分支改为**静默返回**，不再发 `InactivePoint`。另附日志：`ClearLocalInteraction` 在离开点位时确实执行（285016/285233 行，reason 分别是 point trigger 与 not standing），说明清理逻辑在跑，提示不消失另有原因（见下一条） |

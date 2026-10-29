@@ -1,0 +1,2 @@
+
+| 2026-10-19 | W5-transit-cg-1 `Fika-47965-refactor-20261019-W5-transit-cg-1.zip` | ①客机转移点：新增 `FikaTransitClientRequirementsPatch`/`FikaTransitClientPartySizePatch`，客机上 `TransitPoint.CheckInitialRequirements` 与 `CheckAlivePartySizeRequirement` 直接判真（主机 `InteractWithTransit` 才是权威校验），修"当前无法使用转移点"；②剧本桥：`CreateCutsceneControllers` 里改调**原生** `FindMapTimelinesBank()`（dump:94619）代替手写链 bank，补齐控制器自带的订阅；③客机收 `CutsceneStartPacket` 时打一行 `[Cutscene] client received start pid=… viewers=…`，用于区分"包没到"与"包到了没播" |

@@ -1,0 +1,23 @@
+﻿using EFT;
+using EFT.UI;
+using EFT.UI.SessionEnd;
+using SPTushonka.Reflection.Patching;
+using System;
+using System.Reflection;
+namespace Fika.Headless.Patches;
+
+public class SessionResultExitStatusPatch : ModulePatch
+{
+    protected override MethodBase GetTargetMethod()
+    {
+        return typeof(SessionResultExitStatus).GetMethod(nameof(SessionResultExitStatus.Show),
+            [typeof(Profile), typeof(PlayerVisualRepresentation), typeof(ESideType),
+            typeof(ExitStatus), typeof(Il2CppSystem.TimeSpan), typeof(IEftSession), typeof(bool)]);
+    }
+
+    [PatchPostfix]
+    public static void PatchPostfix(SessionResultExitStatus __instance)
+    {
+        __instance._mainMenuButton.OnClick.Invoke();
+    }
+}

@@ -1,0 +1,47 @@
+﻿using FikaServer.Models.Fika.Routes.Client;
+using SPTarkov.Server.Core.Models.Eft.Match;
+using SPTarkov.Server.Core.Models.Enums;
+using SPTarkov.Server.Core.Models.Utils;
+using System.Text.Json.Serialization;
+
+namespace FikaServer.Models.Fika.Routes.Headless;
+
+public record StartHeadlessRequest : IRequestData
+{
+    [JsonPropertyName("headlessSessionID")]
+    public string HeadlessSessionID { get; set; } = string.Empty;
+
+    [JsonPropertyName("reservationToken")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ReservationToken { get; set; }
+
+    [JsonPropertyName("time")]
+    public DateTimeEnum Time { get; set; }
+
+    [JsonPropertyName("locationId")]
+    public string LocationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("spawnPlace")]
+    public PlayersSpawnPlace SpawnPlace { get; set; }
+
+    [JsonPropertyName("metabolismDisabled")]
+    public bool MetabolismDisabled { get; set; }
+
+    [JsonPropertyName("timeAndWeatherSettings")]
+    public TimeAndWeatherSettings? TimeAndWeatherSettings { get; set; }
+
+    [JsonPropertyName("botSettings")]
+    public BotSettings? BotSettings { get; set; }
+
+    [JsonPropertyName("wavesSettings")]
+    public WavesSettings? WavesSettings { get; set; }
+
+    [JsonPropertyName("side")]
+    public SideType Side { get; set; }
+
+    [JsonPropertyName("customRaidSettings")]
+    public FikaCustomRaidSettings? CustomRaidSettings { get; set; }
+
+    [JsonPropertyName("useEvent")]
+    public bool UseEvent { get; set; }
+}

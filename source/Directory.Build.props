@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <GameDir Condition="'$(GameDir)' == ''">$(MSBuildThisFileDirectory)..\SPT5.0</GameDir>
+    <SptRuntimeDir>$(GameDir)\SPT_Runtime</SptRuntimeDir>
+    <BepInExCore>$(GameDir)\BepInEx\core</BepInExCore>
+    <InteropDir>$(GameDir)\BepInEx\interop</InteropDir>
+    <SptClientDir>$(GameDir)\BepInEx\plugins\sptushonka</SptClientDir>
+  </PropertyGroup>
+</Project>

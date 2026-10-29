@@ -1,0 +1,71 @@
+using System;
+using System.Reflection;
+using EFT;
+using SPTushonka.Reflection.Patching;
+
+namespace Fika.Core.Main.Patches;
+
+public class BotCacher_Patch : ModulePatch
+{
+    protected override MethodBase GetTargetMethod()
+    {
+        return typeof(BotInternalSettingsController)
+            .GetMethod(nameof(BotInternalSettingsController.LoadInternal),
+            BindingFlags.Static | BindingFlags.Public);
+    }
+
+    [PatchPrefix]
+    private static bool PatchPrefix(out BotGlobalsCoreSettings core, ref bool __result)
+    {
+        if (FikaPlugin.Instance.BotDifficulties != null)
+        {
+            core = FikaPlugin.Instance.BotDifficulties.CoreSettings;
+        }
+        else
+        {
+            var text = BotInternalSettingsController.LoadCoreByString();
+            if (text == null)
+            {
+                core = null;
+                __result = false;
+                return false;
+            }
+            core = BotGlobalsCoreSettings.Create(text);
+        }
+
+        foreach (var type in Enum.GetValues(typeof(WildSpawnType)))
+        {
+            foreach (var difficulty in Enum.GetValues(typeof(BotDifficulty)))
+            {
+                BotSettingsComponents botSettingsComponents;
+                botSettingsComponents = FikaPlugin.Instance.BotDifficulties.GetComponent((BotDifficulty)difficulty, (WildSpawnType)type);
+                if (botSettingsComponents != null)
+                {
+                    if (!BotInternalSettingsController.AllSettingsPve.ContainsKey((BotDifficulty)difficulty, (WildSpawnType)type))
+                    {
+                        BotInternalSettingsController.AllSettingsPve.Add((BotDifficulty)difficulty, (WildSpawnType)type, botSettingsComponents);
+                    }
+                }
+                else
+                {
+                    botSettingsComponents = BotInternalSettingsController.LoadByDifficulty(BotInternalSettingsController.CheckOnExclude((BotDifficulty)difficulty, (WildSpawnType)type), (WildSpawnType)type, false, true);
+                    if (botSettingsComponents != null)
+                    {
+                        if (!BotInternalSettingsController.AllSettingsPve.ContainsKey((BotDifficulty)difficulty, (WildSpawnType)type))
+                        {
+                            BotInternalSettingsController.AllSettingsPve.Add((BotDifficulty)difficulty, (WildSpawnType)type, botSettingsComponents);
+                        }
+                    }
+                    else
+                    {
+                        __result = false;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        __result = true;
+        return false;
+    }
+}

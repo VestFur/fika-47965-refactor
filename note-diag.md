@@ -1,0 +1,2 @@
+
+| 2026-10-19 | 诊断（未修完） | 终点站转移阻塞点：点位状态由地图触发器 `HandlerTransitPointState`/`HandlerTransitTimeWindow`/`HandlerTransitPartyRestriction` + `TransitAbuseUtil` 在**主机侧**决定，本仓库对这三者**零同步**（全树 0 引用）；客机快照里的 `EnabledPointIds` 只在 `ReceiveSnapshot` 路径被带到 `ApplySnapshot`，点位被触发器改状态后没有任何后续同步。已恢复 `NotifyTeammatesNotReady`（主机重新会报 noallteammate，便于定位）。下一步：给 `HandlerTransitPointState.OnTrigger` 加主机 Postfix，用既有 `TransitEventPacket` + `EnabledPointIds` 字段重发快照；客机在 `ReceiveSnapshot/ApplySnapshot` 里对 `EnabledPointIds` 逐个调用既有 `MirrorPointEnabled` |

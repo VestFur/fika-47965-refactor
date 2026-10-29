@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\Build.props" />
+
+	<PropertyGroup>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Nullable>disable</Nullable>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+
+	<!-- targets -->
+	<PropertyGroup>
+		<Configurations>Debug;Release;GoldMaster</Configurations>
+		<DefineConstants Condition="'$(Configuration)' == 'GoldMaster|AnyCPU' ">TRACE;GOLDMASTER</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='GoldMaster'">
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
+		<Optimize>true</Optimize>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Parallel builds use per-agent tags (obj-<tag>/bin-<tag>). The SDK only excludes the
+		     paths of the current build, so another agent's generated AssemblyAttributes.cs would
+		     be compiled into this one and fail with CS0579 "TargetFrameworkAttribute duplicated".
+		     Keep every tagged intermediate and output tree out of the compile set. -->
+		<Compile Remove="obj*/**;bin*/**" />
+		<Reference Include="$(BepInExCore)/BepInEx.Core.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/BepInEx.Unity.IL2CPP.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/BepInEx.Unity.Common.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/0Harmony.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/SemanticVersioning.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/Il2CppInterop.Common.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/Il2CppInterop.Runtime.dll" Private="false" />
+		<Reference Include="$(BepInExCore)/Il2CppInterop.HarmonySupport.dll" Private="false" />
+		<Reference Include="$(Interop)/*.dll" Exclude="$(Interop)/__Generated.dll" Private="false" />
+		<Reference Include="$(SptPlugins)/SPTushonka.*.dll" Private="false" />
+		<ProjectReference Include="..\..\Client\Fika.Core\Fika.Core.csproj" Private="false" />
+	</ItemGroup>
+
+</Project>

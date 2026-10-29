@@ -1,0 +1,29 @@
+using System.Reflection;
+using EFT.Vehicle;
+using Fika.Core.Main.Components;
+using Fika.Core.Main.Utils;
+using SPTushonka.Reflection.Patching;
+
+namespace Fika.Core.Main.Patches.BTR;
+
+public class BTRView_Start_Patch : ModulePatch
+{
+    protected override MethodBase GetTargetMethod()
+    {
+        return typeof(BTRView)
+            .GetMethod(nameof(BTRView.Start));
+    }
+
+    [PatchPostfix]
+    public static void Postfix(BTRView __instance)
+    {
+        if (FikaBackendUtils.IsServer)
+        {
+            BTRViewSynchronizer.CreateInstance(__instance);
+        }
+        else
+        {
+            FikaSingleton<Fika.Core.Networking.FikaClient>.Instance?.MarkBtrViewReady(__instance);
+        }
+    }
+}

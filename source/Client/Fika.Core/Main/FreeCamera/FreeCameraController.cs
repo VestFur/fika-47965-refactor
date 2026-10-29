@@ -1,0 +1,706 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Comfort.Common;
+using EFT;
+using EFT.CameraControl;
+using EFT.Settings;
+using EFT.UI;
+using Fika.Core.Main.Components;
+using Fika.Core.Main.GameMode;
+using Fika.Core.Main.Players;
+using Fika.Core.Main.Utils;
+using Fika.Core.UI;
+using HarmonyLib;
+using Koenigz.PerfectCulling;
+using Koenigz.PerfectCulling.EFT;
+using TMPro;
+
+namespace Fika.Core.Main.FreeCamera;
+
+/// <summary>
+/// This is HEAVILY based on Terkoiz's work found here. Thanks for your work Terkoiz! <br/>
+/// <see href="https://dev.sp-tarkov.com/Terkoiz/Freecam/raw/branch/master/project/Terkoiz.Freecam/FreecamController.cs"/>
+/// </summary>
+
+public class FreeCameraController : MonoBehaviour
+{
+    public FreeCameraController(System.IntPtr pointer) : base(pointer) { }
+
+
+    public FreeCameraController() : this(Il2CppInterop.Runtime.Injection.ClassInjector.DerivedConstructorPointer<FreeCameraController>())
+    {
+        Il2CppInterop.Runtime.Injection.ClassInjector.DerivedConstructorBody(this);
+    }
+
+    private FikaPlayer Player
+    {
+        get
+        {
+            return Singleton<GameWorld>.Instance?.MainPlayer?.TryCast<FikaPlayer>();
+        }
+    }
+
+    public bool IsScriptActive
+    {
+        get
+        {
+            if (_freeCamScript != null)
+            {
+                return _freeCamScript.IsActive;
+            }
+            return false;
+        }
+    }
+
+    public Camera CameraMain { get; private set; }
+
+    private EftBattleUIScreen BattleUI
+    {
+        get
+        {
+            if (_playerUI == null)
+            {
+                var gameObject = GameObject.Find("BattleUIScreen");
+                if (gameObject == null)
+                {
+                    return null;
+                }
+
+                _playerUI = gameObject.GetComponent<EftBattleUIScreen>();
+                if (_playerUI == null)
+                {
+                    return null;
+                }
+            }
+
+            return _playerUI;
+        }
+        set
+        {
+            _playerUI = value;
+        }
+    }
+
+    private EftBattleUIScreen _playerUI;
+    private GameObject _cameraParent;
+    private bool _isSpectator;
+    private FreeCamera _freeCamScript;
+    private bool _uiHidden;
+    private bool _effectsCleared;
+    private GamePlayerOwner _gamePlayerOwner;
+    private Vector3 _lastKnownPosition;
+    private CoopHandler _coopHandler;
+    private TextMeshProUGUI _extractText;
+    private bool _extracted;
+    private DeathFade _deathFade;
+    private bool _deathFadeEnabled;
+    private DisablerCullingObjectBase[] _allCullingObjects;
+    private List<PerfectCullingBakeGroup> _previouslyActiveBakeGroups;
+    private bool _hasEnabledCulling;
+    private System.Action<EDamageType> _diedHandler;
+
+    protected void Awake()
+    {
+        _cameraParent = new GameObject("CameraParent");
+        var FCamera = _cameraParent.GetOrAddComponent<Camera>();
+        FCamera.enabled = false;
+        _isSpectator = FikaBackendUtils.IsSpectator;
+    }
+
+    protected void Start()
+    {
+        // Find Main Camera
+        CameraMain = CameraManager.Instance.Camera;
+        if (CameraMain == null)
+        {
+            return;
+        }
+
+        // Add Freecam script to main camera in scene
+        _freeCamScript = CameraMain.gameObject.AddComponent<FreeCamera>();
+        if (_freeCamScript == null)
+        {
+            return;
+        }
+
+        // Get GamePlayerOwner component
+        _gamePlayerOwner = GetLocalPlayerFromWorld().GetComponentInChildren<GamePlayerOwner>();
+        if (_gamePlayerOwner == null)
+        {
+            return;
+        }
+
+        _deathFade = CameraManager.Instance.Camera.GetComponent<DeathFade>();
+        // DeathFade is a camera post-process effect. It must stay disabled
+        // during normal raid startup; enabling it here makes the countdown
+        // leave the first-person view blurred after Fika skips LocalGame's
+        // native deployment sequence. DeathMainPlayer_DiedEvent enables it
+        // only when the player actually dies.
+        if (_deathFade != null)
+        {
+            _deathFade.DisableEffectInstant();
+            _deathFade.enabled = false;
+        }
+
+        _allCullingObjects = FindObjectsOfType<DisablerCullingObjectBase>();
+        _previouslyActiveBakeGroups = [];
+
+        _diedHandler = (System.Action<EDamageType>)MainPlayer_DiedEvent;
+        Player.ActiveHealthController.DiedEvent += _diedHandler;
+
+        if (CoopHandler.TryGetCoopHandler(out var cHandler))
+        {
+            _coopHandler = cHandler;
+        }
+
+        CoopGame.MainPlayerExtracted += MainPlayerExtracted;
+    }
+
+    private void MainPlayerExtracted(FikaPlayer player)
+    {
+        if (_extracted)
+        {
+            return;
+        }
+
+#if DEBUG
+        FikaGlobals.LogInfo("Freecam: player has extracted");
+#endif
+        var fikaGame = _coopHandler.LocalGameInstance;
+        if (fikaGame.ExtractedPlayers.Contains(Player.NetId))
+        {
+            Player.ActiveHealthController.DiedEvent -= _diedHandler;
+            _extracted = true;
+            _freeCamScript.Extracted = true;
+            ShowExtractMessage();
+        }
+
+        if (!_freeCamScript.IsActive)
+        {
+            _freeCamScript.RecalculateOnExtract();
+            ToggleUI();
+            if (FikaPlugin.Instance.Settings.AllowSpectateFreeCam || _isSpectator)
+            {
+                _freeCamScript.transform.position = _lastKnownPosition;
+                ToggleCamera();
+            }
+            else
+            {
+                ToggleSpectateCamera();
+            }
+        }
+
+        if (!_effectsCleared)
+        {
+            if (Player != null)
+            {
+                Player.Muffled = false;
+                Player.HeavyBreath = false;
+            }
+
+            if (CameraManager.Exist)
+            {
+                ClearEffects();
+            }
+            _effectsCleared = true;
+        }
+    }
+
+    private void MainPlayer_DiedEvent(EDamageType obj)
+    {
+        Player.ActiveHealthController.DiedEvent -= _diedHandler;
+
+        if (!_deathFadeEnabled)
+        {
+            _deathFade.EnableEffect();
+            _deathFadeEnabled = true;
+        }
+
+        Fika.Core.Il2CppCoroutineExtensions.StartCoroutine(this, DeathRoutine());
+    }
+
+    protected void Update()
+    {
+        if (_gamePlayerOwner == null)
+        {
+            return;
+        }
+
+        if (Player == null)
+        {
+            return;
+        }
+
+        if (Player.ActiveHealthController == null)
+        {
+            return;
+        }
+
+        var quitState = _coopHandler.QuitState;
+        if (quitState != CoopHandler.EQuitState.Extracted)
+        {
+            _lastKnownPosition = Player.PlayerBones.Neck.position;
+        }
+
+        if (_extracted && !_freeCamScript.IsActive)
+        {
+            ToggleUI();
+            if (FikaPlugin.Instance.Settings.AllowSpectateFreeCam || _isSpectator)
+            {
+                ToggleCamera();
+            }
+            else
+            {
+                ToggleSpectateCamera();
+            }
+        }
+
+        if (FikaPlugin.Instance.Settings.FreeCamButton.Value.IsDown())
+        {
+            if (!FikaPlugin.Instance.Settings.AllowFreeCam)
+            {
+                return;
+            }
+
+            if (quitState == CoopHandler.EQuitState.None)
+            {
+                ToggleCamera();
+                ToggleUI();
+                return;
+            }
+        }
+
+        if (quitState == CoopHandler.EQuitState.Extracted && !_extracted)
+        {
+
+        }
+    }
+
+    private IEnumerator DeathRoutine()
+    {
+        if (!_isSpectator)
+        {
+            yield return new WaitSeconds(5f);
+        }
+
+        var cameraClassInstance = CameraManager.Instance;
+        if (cameraClassInstance == null)
+        {
+            yield break;
+        }
+
+        if (cameraClassInstance.EffectsController == null)
+        {
+            yield break;
+        }
+
+        if (cameraClassInstance.Camera != null)
+        {
+            cameraClassInstance.Camera.fieldOfView = Singleton<SettingsManager>.Instance.Game.Settings.FieldOfView;
+        }
+
+        // Disable the DeathFade effect & Toggle the Camera
+        _deathFade.DisableEffect();
+        if (!_freeCamScript.IsActive)
+        {
+            ToggleUI();
+            if (FikaPlugin.Instance.Settings.AllowSpectateFreeCam || _isSpectator)
+            {
+                ToggleCamera();
+
+                if (_isSpectator)
+                {
+                    // Cycle camera to any alive player
+                    _freeCamScript.CycleSpectatePlayers();
+                }
+            }
+            else
+            {
+                ToggleSpectateCamera();
+            }
+        }
+        ShowExtractMessage();
+
+        if (!_effectsCleared)
+        {
+            if (Player != null)
+            {
+                Player.Muffled = false;
+                Player.HeavyBreath = false;
+            }
+
+            if (CameraManager.Exist)
+            {
+                ClearEffects();
+            }
+            _effectsCleared = true;
+        }
+    }
+
+    private void ClearEffects()
+    {
+        var cameraClass = CameraManager.Instance;
+
+        cameraClass.EffectsController.OnGlassesChanged(null, false);
+
+        var bloodOnScreen = cameraClass.EffectsController._bloodOnScreen;
+        if (bloodOnScreen != null)
+        {
+            Destroy(bloodOnScreen);
+        }
+
+        var effectsManagerList = cameraClass.EffectsController._effectAccumulators;
+        if (effectsManagerList != null)
+        {
+            for (var i = 0; i < effectsManagerList.Count; i++)
+            {
+                var effectsManager = effectsManagerList[i];
+                while (effectsManager.ActiveEffects.Count > 0)
+                {
+                    var effect = effectsManager.ActiveEffects[0];
+                    effectsManager.DeleteEffect(effect);
+                }
+            }
+            effectsManagerList.Clear();
+        }
+
+        var wiggleEffect = cameraClass.Camera.gameObject.GetComponent<CC_Wiggle>();
+        if (wiggleEffect != null)
+        {
+            wiggleEffect.enabled = false;
+        }
+
+        var blendEffects = cameraClass.Camera.gameObject.GetComponents<CC_Blend>();
+        if (blendEffects.Length > 0)
+        {
+            foreach (var blendEffect in blendEffects)
+            {
+                blendEffect.enabled = false;
+            }
+        }
+
+        Destroy(cameraClass.EffectsController);
+        cameraClass.VisorEffect.Clear();
+        Destroy(cameraClass.VisorEffect);
+        cameraClass.VisorSwitcher.Deinit();
+        Destroy(cameraClass.VisorSwitcher);
+        if (cameraClass.NightVision.On)
+        {
+            cameraClass.NightVision.Switch(false);
+        }
+        if (cameraClass.ThermalVision.On)
+        {
+            cameraClass.ThermalVision.Switch(false);
+        }
+    }
+
+    private void ShowExtractMessage()
+    {
+        if (FikaPlugin.Instance.Settings.ShowExtractMessage.Value)
+        {
+            var text = FikaPlugin.Instance.Settings.ExtractKey.Value.MainKey.ToString();
+            if (FikaPlugin.Instance.Settings.ExtractKey.Value.Modifiers.Any())
+            {
+                var modifiers = string.Join(" + ", FikaPlugin.Instance.Settings.ExtractKey.Value.Modifiers);
+                text = modifiers + " + " + text;
+            }
+            _extractText = FikaUIGlobals.CreateOverlayText(string.Format(LocaleUtils.UI_EXTRACT_MESSAGE.Localized(), $"'{text}'"));
+        }
+    }
+
+    /// <summary>
+    /// Toggles the Freecam mode
+    /// </summary>
+    public void ToggleCamera()
+    {
+        // Get our own Player instance. Null means we're not in a raid
+        if (Player == null)
+        {
+            return;
+        }
+
+        if (!_freeCamScript.IsActive)
+        {
+            SetPlayerToFreecamMode(Player);
+        }
+        else
+        {
+            SetPlayerToFirstPersonMode(Player);
+        }
+    }
+
+    /// <summary>
+    /// Restores the normal local-player camera after raid deployment.  This is
+    /// used by the SPT 5 Fika countdown path, which does not pass through the
+    /// stock LocalGame camera teardown and can leave the free-camera owner
+    /// disabled even while the player is alive.
+    /// </summary>
+    public void ForceFirstPersonView()
+    {
+        if (Player == null)
+        {
+            return;
+        }
+
+        if (_freeCamScript != null && _freeCamScript.IsActive)
+        {
+            SetPlayerToFirstPersonMode(Player);
+            return;
+        }
+
+        if (_gamePlayerOwner != null)
+        {
+            _gamePlayerOwner.enabled = true;
+        }
+
+        if (_freeCamScript != null)
+        {
+            _freeCamScript.IsActive = false;
+            _freeCamScript.transform.SetParent(null);
+        }
+
+        SetExternalCameraControl(Player, false);
+        Player.PointOfView = EPointOfView.FirstPerson;
+        if (Player.PlayerBody != null)
+        {
+            Player.PlayerBody.PointOfView.Value = EPointOfView.FirstPerson;
+        }
+        Player.GetComponent<PlayerCameraController>()?.UpdatePointOfView();
+    }
+
+    public void ToggleSpectateCamera()
+    {
+        if (Player == null)
+        {
+            return;
+        }
+
+        if (!_freeCamScript.IsActive)
+        {
+            var aliveTargets = _freeCamScript.RecalculateAndGetPlayers();
+
+            if (aliveTargets.Count == 0)
+            {
+#if DEBUG
+                FikaGlobals.LogInfo("FreecamController: No players found");
+#endif
+                _freeCamScript.transform.position = _lastKnownPosition;
+                ToggleCamera();
+                return;
+            }
+
+            var fikaPlayer = aliveTargets[0];
+            _freeCamScript.SetCurrentPlayer(fikaPlayer);
+#if DEBUG
+            FikaGlobals.LogInfo("FreecamController: Spectating new target: " + fikaPlayer.Profile.Info.MainProfileNickname);
+#endif
+
+            Player.PointOfView = EPointOfView.ThirdPerson;
+            if (Player.PlayerBody != null)
+            {
+                Player.PlayerBody.PointOfView.Value = EPointOfView.FreeCamera;
+                Player.GetComponent<PlayerCameraController>().UpdatePointOfView();
+            }
+            SetExternalCameraControl(Player, true);
+            _gamePlayerOwner.enabled = false;
+            _freeCamScript.SetActive(true, _extracted);
+
+            _freeCamScript.Attach3rdPerson();
+        }
+    }
+
+    /// <summary>
+    /// Hides the main UI (health, stamina, stance, hotbar, etc.)
+    /// </summary>
+    private void ToggleUI()
+    {
+        // Check if we're currently in a raid
+        if (Player == null)
+        {
+            return;
+        }
+
+        if (BattleUI == null || BattleUI.gameObject == null)
+        {
+            return;
+        }
+
+        BattleUI.gameObject.SetActive(_uiHidden);
+        _uiHidden = !_uiHidden;
+    }
+
+    /// <summary>
+    /// A helper method to set the Player into Freecam mode
+    /// </summary>
+    /// <param name="localPlayer"></param>
+    private void SetPlayerToFreecamMode(Player localPlayer)
+    {
+        // We set the player to third person mode
+        // This means our character will be fully visible, while letting the camera move freely
+        localPlayer.PointOfView = EPointOfView.ThirdPerson;
+
+        if (localPlayer.PlayerBody != null)
+        {
+            localPlayer.PlayerBody.PointOfView.Value = EPointOfView.FreeCamera;
+            localPlayer.GetComponent<PlayerCameraController>().UpdatePointOfView();
+        }
+
+        SetExternalCameraControl(localPlayer, true);
+        _gamePlayerOwner.enabled = false;
+        _freeCamScript.SetActive(true, _extracted);
+    }
+
+    // BetterCamController otherwise snaps the camera to the player each LateUpdate.
+    private static void SetExternalCameraControl(Player localPlayer, bool external)
+    {
+        var controller = localPlayer.GetComponent<PlayerCameraController>();
+        if (controller != null)
+        {
+            controller.ExternalControl = external;
+        }
+    }
+
+    /// <summary>
+    /// A helper method to reset the player view back to First Person
+    /// </summary>
+    /// <param name="localPlayer"></param>
+    private void SetPlayerToFirstPersonMode(Player localPlayer)
+    {
+        // re-enable _gamePlayerOwner
+        _gamePlayerOwner.enabled = true;
+        _freeCamScript.SetActive(false, _extracted);
+        SetExternalCameraControl(localPlayer, false);
+
+        localPlayer.PointOfView = EPointOfView.FirstPerson;
+        CameraManager.Instance.SetOcclusionCullingEnabled(new Il2CppSystem.Nullable<bool>(true));
+
+        if (_hasEnabledCulling)
+        {
+            EnableAllCullingObjects();
+        }
+    }
+
+    public void DisableAllCullingObjects()
+    {
+        var count = 0;
+        foreach (var cullingObject in _allCullingObjects)
+        {
+            if (cullingObject.HasEntered)
+            {
+                continue;
+            }
+            count++;
+            cullingObject.SetComponentsEnabled(true);
+        }
+#if DEBUG
+        FikaGlobals.LogWarning($"Enabled {count} Culling Triggers.");
+#endif
+
+        var perfectCullingAdaptiveGrid = FindObjectOfType<PerfectCullingAdaptiveGrid>();
+        if (perfectCullingAdaptiveGrid != null)
+        {
+            if (perfectCullingAdaptiveGrid.RuntimeGroupMapping.Count > 0)
+            {
+                foreach (var sceneGroup in perfectCullingAdaptiveGrid.RuntimeGroupMapping)
+                {
+                    foreach (var bakeGroup in sceneGroup.bakeGroups)
+                    {
+                        if (!bakeGroup.IsEnabled)
+                        {
+                            bakeGroup.IsEnabled = true;
+                            continue;
+                        }
+
+                        _previouslyActiveBakeGroups.Add(bakeGroup);
+                    }
+
+                    sceneGroup.enabled = false;
+                }
+            }
+        }
+
+        _hasEnabledCulling = true;
+    }
+
+    public void EnableAllCullingObjects()
+    {
+        var count = 0;
+        foreach (var cullingObject in _allCullingObjects)
+        {
+            if (cullingObject.HasEntered)
+            {
+                continue;
+            }
+            count++;
+            cullingObject.SetComponentsEnabled(false);
+        }
+#if DEBUG
+        FikaGlobals.LogWarning($"Disabled {count} Culling Triggers.");
+#endif
+
+        var perfectCullingAdaptiveGrid = FindObjectOfType<PerfectCullingAdaptiveGrid>();
+        if (perfectCullingAdaptiveGrid != null)
+        {
+            if (perfectCullingAdaptiveGrid.RuntimeGroupMapping.Count > 0)
+            {
+                foreach (var sceneGroup in perfectCullingAdaptiveGrid.RuntimeGroupMapping)
+                {
+                    sceneGroup.enabled = true;
+
+                    foreach (var bakeGroup in sceneGroup.bakeGroups)
+                    {
+                        if (bakeGroup.IsEnabled && !_previouslyActiveBakeGroups.Contains(bakeGroup))
+                        {
+                            bakeGroup.IsEnabled = false;
+                            continue;
+                        }
+
+                        _previouslyActiveBakeGroups.Remove(bakeGroup);
+                    }
+
+                    _previouslyActiveBakeGroups.Clear();
+                }
+            }
+        }
+
+        _hasEnabledCulling = false;
+    }
+
+    /// <summary>
+    /// Gets the current <see cref="EFT.Player"/> instance if it's available
+    /// </summary>
+    /// <returns>Local <see cref="EFT.Player"/> instance; returns null if the game is not in raid</returns>
+    private Player GetLocalPlayerFromWorld()
+    {
+        // If the GameWorld instance is null or has no RegisteredPlayers, it most likely means we're not in a raid
+        var gameWorld = Singleton<GameWorld>.Instance;
+        if (gameWorld == null || gameWorld.MainPlayer == null)
+        {
+            return null;
+        }
+
+        // One of the RegisteredPlayers will have the IsYourPlayer flag set, which will be our own Player instance
+        return gameWorld.MainPlayer;
+    }
+
+    public void OnDestroy()
+    {
+        CoopGame.MainPlayerExtracted -= MainPlayerExtracted;
+        if (!FikaSingleton<FreeCameraController>.TryRelease(this))
+        {
+            FikaGlobals.LogWarning("Unable to release FreeCameraController singleton");
+        }
+        Destroy(_cameraParent);
+
+        // Destroy FreeCamScript before FreeCamController if exists
+        Destroy(_freeCamScript);
+        if (_extractText != null)
+        {
+            Destroy(_extractText);
+        }
+        Destroy(this);
+    }
+}
+
+

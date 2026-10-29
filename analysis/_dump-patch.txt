@@ -1,0 +1,915 @@
+=== SPTushonka.Reflection.Patching.ModulePatch
+--- get_TargetMethod
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.ModulePatch::<TargetMethod>k__BackingField
+    IL_0006: ret 
+--- set_TargetMethod
+    IL_0000: ldarg.0 
+    IL_0001: ldarg.1 
+    IL_0002: stfld SPTushonka.Reflection.Patching.ModulePatch::<TargetMethod>k__BackingField
+    IL_0007: ret 
+--- get_IsActive
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.ModulePatch::<IsActive>k__BackingField
+    IL_0006: ret 
+--- set_IsActive
+    IL_0000: ldarg.0 
+    IL_0001: ldarg.1 
+    IL_0002: stfld SPTushonka.Reflection.Patching.ModulePatch::<IsActive>k__BackingField
+    IL_0007: ret 
+--- get_IsManaged
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.ModulePatch::<IsManaged>k__BackingField
+    IL_0006: ret 
+--- set_IsManaged
+    IL_0000: ldarg.0 
+    IL_0001: ldarg.1 
+    IL_0002: stfld SPTushonka.Reflection.Patching.ModulePatch::<IsManaged>k__BackingField
+    IL_0007: ret 
+--- get_HarmonyId
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_0006: dup 
+    IL_0007: brtrue.s 0x4
+    IL_0009: pop 
+    IL_000a: ldnull 
+    IL_000b: br.s 0x5
+    IL_000d: call SPTushonka.Reflection.Patching.ModulePatch::GetPatchMethods
+    IL_0012: dup 
+    IL_0013: brtrue.s 0x6
+    IL_0015: pop 
+    IL_0016: ldstr "Harmony Id is null for this patch"
+    IL_001b: ret 
+--- get_Logger
+    IL_0000: ldsfld SPTushonka.Reflection.Patching.ModulePatch::<Logger>k__BackingField
+    IL_0005: ret 
+--- set_Logger
+    IL_0000: ldarg.0 
+    IL_0001: stsfld SPTushonka.Reflection.Patching.ModulePatch::<Logger>k__BackingField
+    IL_0006: ret 
+--- .ctor
+    IL_0000: ldarg.0 
+    IL_0001: ldnull 
+    IL_0002: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_0007: ret 
+--- .ctor
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0006: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_000b: brtrue.s 0x11
+    IL_000d: ldstr "SPTushonka"
+    IL_0012: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0017: dup 
+    IL_0018: call SPTushonka.Reflection.Patching.ModulePatch::set_Logger
+    IL_001d: pop 
+    IL_001e: ldarg.0 
+    IL_001f: ldarg.1 
+    IL_0020: dup 
+    IL_0021: brtrue.s 0xC
+    IL_0023: pop 
+    IL_0024: ldarg.0 
+    IL_0025: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_002a: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_002f: newobj SPTushonka.Reflection.Patching.ModulePatch::Summarise
+    IL_0034: stfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_0039: ldarg.0 
+    IL_003a: ldarg.0 
+    IL_003b: ldtoken typeref System.Runtime.Versioning.TargetFrameworkAttribute
+    IL_0040: call SPTushonka.Reflection.Utils.PatchConstants::get_BackEndSession
+    IL_0045: call SPTushonka.Reflection.Patching.ModulePatch::GetPatchMethods
+    IL_004a: stfld SPTushonka.Reflection.Patching.ModulePatch::_prefixList
+    IL_004f: ldarg.0 
+    IL_0050: ldarg.0 
+    IL_0051: ldtoken typeref System.Reflection.AssemblyCompanyAttribute
+    IL_0056: call SPTushonka.Reflection.Utils.PatchConstants::get_BackEndSession
+    IL_005b: call SPTushonka.Reflection.Patching.ModulePatch::GetPatchMethods
+    IL_0060: stfld SPTushonka.Reflection.Patching.ModulePatch::_postfixList
+    IL_0065: ldarg.0 
+    IL_0066: ldarg.0 
+    IL_0067: ldtoken typeref System.Reflection.AssemblyConfigurationAttribute
+    IL_006c: call SPTushonka.Reflection.Utils.PatchConstants::get_BackEndSession
+    IL_0071: call SPTushonka.Reflection.Patching.ModulePatch::GetPatchMethods
+    IL_0076: stfld SPTushonka.Reflection.Patching.ModulePatch::_finalizerList
+    IL_007b: ldarg.0 
+    IL_007c: ldfld SPTushonka.Reflection.Patching.ModulePatch::_prefixList
+    IL_0081: callvirt SPTushonka.Reflection.Patching.ModulePatch::.cctor
+    IL_0086: brtrue.s 0x35
+    IL_0088: ldarg.0 
+    IL_0089: ldfld SPTushonka.Reflection.Patching.ModulePatch::_postfixList
+    IL_008e: callvirt SPTushonka.Reflection.Patching.ModulePatch::.cctor
+    IL_0093: brtrue.s 0x28
+    IL_0095: ldarg.0 
+    IL_0096: ldfld SPTushonka.Reflection.Patching.ModulePatch::_finalizerList
+    IL_009b: callvirt SPTushonka.Reflection.Patching.ModulePatch::.cctor
+    IL_00a0: brtrue.s 0x1B
+    IL_00a2: ldarg.0 
+    IL_00a3: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_00a8: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_00ad: ldstr ": At least one of the patch methods must be specified"
+    IL_00b2: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_00b7: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_00bc: throw 
+    IL_00bd: ret 
+--- GetTargetMethod (no body)
+--- GetPatchMethods
+    IL_0000: newobj SPTushonka.Reflection.Patching.PatchPrefixAttribute::.ctor
+    IL_0005: stloc.0 
+    IL_0006: ldarg.0 
+    IL_0007: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_000c: ldc.i4.s 0x3A
+    IL_000e: callvirt SPTushonka.Reflection.Patching.PatchPostfixAttribute::.ctor
+    IL_0013: stloc.1 
+    IL_0014: ldc.i4.0 
+    IL_0015: stloc.2 
+    IL_0016: br.s 0x1D
+    IL_0018: ldloc.1 
+    IL_0019: ldloc.2 
+    IL_001a: ldelem.ref 
+    IL_001b: stloc.3 
+    IL_001c: ldloc.3 
+    IL_001d: ldarg.1 
+    IL_001e: call SPTushonka.Reflection.Patching.PatchFinalizerAttribute::.ctor
+    IL_0023: brfalse.s 0xC
+    IL_0025: ldloc.0 
+    IL_0026: ldloc.3 
+    IL_0027: newobj SPTushonka.Reflection.Patching.IgnoreAutoPatchAttribute::.ctor
+    IL_002c: callvirt SPTushonka.Reflection.Patching.DebugPatchAttribute::.ctor
+    IL_0031: ldloc.2 
+    IL_0032: ldc.i4.1 
+    IL_0033: add 
+    IL_0034: stloc.2 
+    IL_0035: ldloc.2 
+    IL_0036: ldloc.1 
+    IL_0037: ldlen 
+    IL_0038: conv.i4 
+    IL_0039: blt.s 0xDD
+    IL_003b: ldloc.0 
+    IL_003c: ret 
+--- Enable
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_0006: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_000b: stloc.0 
+    IL_000c: ldsfld SPTushonka.Reflection.Patching.ModulePatch::_requested
+    IL_0011: ldc.i4.1 
+    IL_0012: add 
+    IL_0013: stsfld SPTushonka.Reflection.Patching.ModulePatch::_requested
+    IL_0018: ldarg.0 
+    IL_0019: ldarg.0 
+    IL_001a: callvirt SPTushonka.Reflection.Patching.ModulePatch::GetTargetMethod
+    IL_001f: call SPTushonka.Reflection.Patching.ModulePatch::set_TargetMethod
+    IL_0024: ldarg.0 
+    IL_0025: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_002a: ldnull 
+    IL_002b: call SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_0030: brfalse.s 0x1C
+    IL_0032: ldsfld SPTushonka.Reflection.Patching.ModulePatch::Missing
+    IL_0037: ldloc.0 
+    IL_0038: callvirt SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_003d: ldloc.0 
+    IL_003e: ldstr ": TargetMethod is null"
+    IL_0043: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_0048: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_004d: throw 
+    IL_004e: nop 
+    IL_004f: ldarg.0 
+    IL_0050: ldfld SPTushonka.Reflection.Patching.ModulePatch::_prefixList
+    IL_0055: callvirt SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_005a: stloc.1 
+    IL_005b: br.s 0x1F
+    IL_005d: ldloca.s 0x1
+    IL_005f: call SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_0064: stloc.2 
+    IL_0065: ldarg.0 
+    IL_0066: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_006b: ldarg.0 
+    IL_006c: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_0071: ldloc.2 
+    IL_0072: ldnull 
+    IL_0073: ldnull 
+    IL_0074: ldnull 
+    IL_0075: ldnull 
+    IL_0076: callvirt SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_007b: pop 
+    IL_007c: ldloca.s 0x1
+    IL_007e: call SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_0083: brtrue.s 0xD8
+    IL_0085: leave.s 0xE
+    IL_0087: ldloca.s 0x1
+    IL_0089: constrained. typespec Enumerator<HarmonyLib.HarmonyMethod>
+    IL_008f: callvirt SPTushonka.Reflection.Patching.PatchManager::AddPatch
+    IL_0094: endfinally 
+    IL_0095: ldarg.0 
+    IL_0096: ldfld SPTushonka.Reflection.Patching.ModulePatch::_postfixList
+    IL_009b: callvirt SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_00a0: stloc.1 
+    IL_00a1: br.s 0x1F
+    IL_00a3: ldloca.s 0x1
+    IL_00a5: call SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_00aa: stloc.3 
+    IL_00ab: ldarg.0 
+    IL_00ac: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_00b1: ldarg.0 
+    IL_00b2: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_00b7: ldnull 
+    IL_00b8: ldloc.3 
+    IL_00b9: ldnull 
+    IL_00ba: ldnull 
+    IL_00bb: ldnull 
+    IL_00bc: callvirt SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_00c1: pop 
+    IL_00c2: ldloca.s 0x1
+    IL_00c4: call SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_00c9: brtrue.s 0xD8
+    IL_00cb: leave.s 0xE
+    IL_00cd: ldloca.s 0x1
+    IL_00cf: constrained. typespec Enumerator<HarmonyLib.HarmonyMethod>
+    IL_00d5: callvirt SPTushonka.Reflection.Patching.PatchManager::AddPatch
+    IL_00da: endfinally 
+    IL_00db: ldarg.0 
+    IL_00dc: ldfld SPTushonka.Reflection.Patching.ModulePatch::_finalizerList
+    IL_00e1: callvirt SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_00e6: stloc.1 
+    IL_00e7: br.s 0x21
+    IL_00e9: ldloca.s 0x1
+    IL_00eb: call SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_00f0: stloc.s 0x4
+    IL_00f2: ldarg.0 
+    IL_00f3: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_00f8: ldarg.0 
+    IL_00f9: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_00fe: ldnull 
+    IL_00ff: ldnull 
+    IL_0100: ldnull 
+    IL_0101: ldloc.s 0x4
+    IL_0103: ldnull 
+    IL_0104: callvirt SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_0109: pop 
+    IL_010a: ldloca.s 0x1
+    IL_010c: call SPTushonka.Reflection.Patching.PatchManager::.ctor
+    IL_0111: brtrue.s 0xD6
+    IL_0113: leave.s 0xE
+    IL_0115: ldloca.s 0x1
+    IL_0117: constrained. typespec Enumerator<HarmonyLib.HarmonyMethod>
+    IL_011d: callvirt SPTushonka.Reflection.Patching.PatchManager::AddPatch
+    IL_0122: endfinally 
+    IL_0123: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_0128: ldc.i4.s 0xE
+    IL_012a: ldc.i4.1 
+    IL_012b: ldloca.s 0x6
+    IL_012d: newobj SPTushonka.Reflection.Patching.PatchManager::AddPatches
+    IL_0132: stloc.s 0x5
+    IL_0134: ldloc.s 0x6
+    IL_0136: brfalse.s 0x14
+    IL_0138: ldloc.s 0x5
+    IL_013a: ldstr "Enabled patch "
+    IL_013f: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0144: ldloc.s 0x5
+    IL_0146: ldloc.0 
+    IL_0147: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_014c: ldloc.s 0x5
+    IL_014e: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatches
+    IL_0153: ldarg.0 
+    IL_0154: ldc.i4.1 
+    IL_0155: call SPTushonka.Reflection.Patching.ModulePatch::set_IsActive
+    IL_015a: leave.s 0x58
+    IL_015c: stloc.s 0x7
+    IL_015e: ldsfld SPTushonka.Reflection.Patching.ModulePatch::Missing
+    IL_0163: ldloc.0 
+    IL_0164: callvirt SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_0169: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_016e: ldc.i4.2 
+    IL_016f: ldc.i4.2 
+    IL_0170: ldloca.s 0x6
+    IL_0172: newobj SPTushonka.Reflection.Patching.PatchManager::EnablePatch
+    IL_0177: stloc.s 0x8
+    IL_0179: ldloc.s 0x6
+    IL_017b: brfalse.s 0x1D
+    IL_017d: ldloc.s 0x8
+    IL_017f: ldloc.0 
+    IL_0180: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_0185: ldloc.s 0x8
+    IL_0187: ldstr ": "
+    IL_018c: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0191: ldloc.s 0x8
+    IL_0193: ldloc.s 0x7
+    IL_0195: callvirt mref System.Reflection.AssemblyConfigurationAttribute::.ctor
+    IL_019a: ldloc.s 0x8
+    IL_019c: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatch
+    IL_01a1: ldloc.0 
+    IL_01a2: ldstr ":"
+    IL_01a7: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_01ac: ldloc.s 0x7
+    IL_01ae: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_01b3: throw 
+    IL_01b4: ret 
+--- Enable
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_0006: ldarg.1 
+    IL_0007: beq.s 0x7
+    IL_0009: ldarg.0 
+    IL_000a: ldarg.1 
+    IL_000b: stfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_0010: ldarg.0 
+    IL_0011: ldc.i4.1 
+    IL_0012: call SPTushonka.Reflection.Patching.ModulePatch::set_IsManaged
+    IL_0017: ldarg.0 
+    IL_0018: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_001d: ret 
+--- Disable
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_0006: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_000b: stloc.0 
+    IL_000c: ldarg.0 
+    IL_000d: ldarg.0 
+    IL_000e: callvirt SPTushonka.Reflection.Patching.ModulePatch::GetTargetMethod
+    IL_0013: call SPTushonka.Reflection.Patching.ModulePatch::set_TargetMethod
+    IL_0018: ldarg.0 
+    IL_0019: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_001e: ldnull 
+    IL_001f: call SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_0024: brfalse.s 0x11
+    IL_0026: ldloc.0 
+    IL_0027: ldstr ": TargetMethod is null"
+    IL_002c: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_0031: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_0036: throw 
+    IL_0037: nop 
+    IL_0038: ldarg.0 
+    IL_0039: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_003e: call SPTushonka.Reflection.Patching.PatchManager::IsAssemblyDebugBuild
+    IL_0043: stloc.1 
+    IL_0044: ldloc.1 
+    IL_0045: brfalse.s 0x23
+    IL_0047: ldloc.1 
+    IL_0048: ldfld fref HarmonyLib.Patches::Prefixes
+    IL_004d: ldloc.1 
+    IL_004e: ldfld fref HarmonyLib.Patches::Postfixes
+    IL_0053: call mref System.Reflection.AssemblyCopyrightAttribute::.ctor
+    IL_0058: ldloc.1 
+    IL_0059: ldfld fref HarmonyLib.Patches::Finalizers
+    IL_005e: call mref System.Reflection.AssemblyCopyrightAttribute::.ctor
+    IL_0063: call mref System.Reflection.AssemblyFileVersionAttribute::.ctor
+    IL_0068: br.s 0x5
+    IL_006a: newobj SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2CppDictionary
+    IL_006f: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToManagedDictionary
+    IL_0074: stloc.2 
+    IL_0075: br.s 0x37
+    IL_0077: ldloca.s 0x2
+    IL_0079: call SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToManaged
+    IL_007e: stloc.3 
+    IL_007f: ldloc.3 
+    IL_0080: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2Cpp
+    IL_0085: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToManaged
+    IL_008a: ldarg.0 
+    IL_008b: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_0090: call SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2Cpp
+    IL_0095: brfalse.s 0x17
+    IL_0097: ldarg.0 
+    IL_0098: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_009d: ldarg.0 
+    IL_009e: call SPTushonka.Reflection.Patching.ModulePatch::get_TargetMethod
+    IL_00a3: ldloc.3 
+    IL_00a4: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2Cpp
+    IL_00a9: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToMongoId
+    IL_00ae: ldloca.s 0x2
+    IL_00b0: call SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2CppNullable
+    IL_00b5: brtrue.s 0xC0
+    IL_00b7: leave.s 0xE
+    IL_00b9: ldloca.s 0x2
+    IL_00bb: constrained. typespec Enumerator<HarmonyLib.Patch>
+    IL_00c1: callvirt SPTushonka.Reflection.Patching.PatchManager::AddPatch
+    IL_00c6: endfinally 
+    IL_00c7: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_00cc: ldc.i4.s 0xF
+    IL_00ce: ldc.i4.1 
+    IL_00cf: ldloca.s 0x5
+    IL_00d1: newobj SPTushonka.Reflection.Patching.PatchManager::AddPatches
+    IL_00d6: stloc.s 0x4
+    IL_00d8: ldloc.s 0x5
+    IL_00da: brfalse.s 0x14
+    IL_00dc: ldloc.s 0x4
+    IL_00de: ldstr "Disabled patch "
+    IL_00e3: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_00e8: ldloc.s 0x4
+    IL_00ea: ldloc.0 
+    IL_00eb: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_00f0: ldloc.s 0x4
+    IL_00f2: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatches
+    IL_00f7: ldarg.0 
+    IL_00f8: ldc.i4.0 
+    IL_00f9: call SPTushonka.Reflection.Patching.ModulePatch::set_IsActive
+    IL_00fe: leave.s 0x4D
+    IL_0100: stloc.s 0x6
+    IL_0102: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_0107: ldc.i4.2 
+    IL_0108: ldc.i4.2 
+    IL_0109: ldloca.s 0x5
+    IL_010b: newobj SPTushonka.Reflection.Patching.PatchManager::EnablePatch
+    IL_0110: stloc.s 0x7
+    IL_0112: ldloc.s 0x5
+    IL_0114: brfalse.s 0x1D
+    IL_0116: ldloc.s 0x7
+    IL_0118: ldloc.0 
+    IL_0119: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_011e: ldloc.s 0x7
+    IL_0120: ldstr ": "
+    IL_0125: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_012a: ldloc.s 0x7
+    IL_012c: ldloc.s 0x6
+    IL_012e: callvirt mref System.Reflection.AssemblyConfigurationAttribute::.ctor
+    IL_0133: ldloc.s 0x7
+    IL_0135: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatch
+    IL_013a: ldloc.0 
+    IL_013b: ldstr ":"
+    IL_0140: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_0145: ldloc.s 0x6
+    IL_0147: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_014c: throw 
+    IL_014d: ret 
+--- Disable
+    IL_0000: ldarg.1 
+    IL_0001: brfalse.s 0x9
+    IL_0003: ldarg.0 
+    IL_0004: ldfld SPTushonka.Reflection.Patching.ModulePatch::_harmony
+    IL_0009: ldarg.1 
+    IL_000a: beq.s 0x20
+    IL_000c: ldstr "Patch: "
+    IL_0011: ldarg.0 
+    IL_0012: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_0017: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_001c: ldstr " is attempting to be disabled internally while not managed by the patch manager."
+    IL_0021: call SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2Cpp
+    IL_0026: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_002b: throw 
+    IL_002c: ldarg.0 
+    IL_002d: call SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_0032: ldarg.0 
+    IL_0033: ldc.i4.0 
+    IL_0034: call SPTushonka.Reflection.Patching.ModulePatch::set_IsManaged
+    IL_0039: ret 
+--- Summarise
+    IL_0000: ldsfld SPTushonka.Reflection.Patching.ModulePatch::_requested
+    IL_0005: ldsfld SPTushonka.Reflection.Patching.ModulePatch::_reportedRequests
+    IL_000a: sub 
+    IL_000b: stloc.0 
+    IL_000c: ldsfld SPTushonka.Reflection.Patching.ModulePatch::Missing
+    IL_0011: ldsfld SPTushonka.Reflection.Patching.ModulePatch::_reportedMissing
+    IL_0016: call mref System.Reflection.AssemblyInformationalVersionAttribute::.ctor
+    IL_001b: call mref System.Reflection.AssemblyProductAttribute::.ctor
+    IL_0020: stloc.1 
+    IL_0021: ldsfld SPTushonka.Reflection.Patching.ModulePatch::_requested
+    IL_0026: stsfld SPTushonka.Reflection.Patching.ModulePatch::_reportedRequests
+    IL_002b: ldsfld SPTushonka.Reflection.Patching.ModulePatch::Missing
+    IL_0030: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToManaged
+    IL_0035: stsfld SPTushonka.Reflection.Patching.ModulePatch::_reportedMissing
+    IL_003a: ldloc.1 
+    IL_003b: ldlen 
+    IL_003c: brtrue.s 0x3E
+    IL_003e: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_0043: ldc.i4.s 0x14
+    IL_0045: ldc.i4.2 
+    IL_0046: ldloca.s 0x3
+    IL_0048: newobj SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToManaged
+    IL_004d: stloc.2 
+    IL_004e: ldloc.3 
+    IL_004f: brfalse.s 0x24
+    IL_0051: ldloc.2 
+    IL_0052: ldarg.0 
+    IL_0053: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_0058: ldloc.2 
+    IL_0059: ldstr ": "
+    IL_005e: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0063: ldloc.2 
+    IL_0064: ldloc.0 
+    IL_0065: callvirt mref System.Reflection.AssemblyTitleAttribute::.ctor
+    IL_006a: ldloc.2 
+    IL_006b: ldstr " patch(es) applied"
+    IL_0070: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0075: ldloc.2 
+    IL_0076: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::BoxIl2Cpp
+    IL_007b: ret 
+    IL_007c: call SPTushonka.Reflection.Patching.ModulePatch::get_Logger
+    IL_0081: ldc.i4.s 0x25
+    IL_0083: ldc.i4.4 
+    IL_0084: ldloca.s 0x3
+    IL_0086: newobj SPTushonka.Reflection.Il2Cpp.Il2CppConversions::AsIl2CppEnumerable
+    IL_008b: stloc.s 0x4
+    IL_008d: ldloc.3 
+    IL_008e: brfalse.s 0x5E
+    IL_0090: ldloc.s 0x4
+    IL_0092: ldarg.0 
+    IL_0093: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_0098: ldloc.s 0x4
+    IL_009a: ldstr ": "
+    IL_009f: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_00a4: ldloc.s 0x4
+    IL_00a6: ldloc.0 
+    IL_00a7: ldloc.1 
+    IL_00a8: ldlen 
+    IL_00a9: conv.i4 
+    IL_00aa: sub 
+    IL_00ab: callvirt mref System.Reflection.AssemblyTitleAttribute::.ctor
+    IL_00b0: ldloc.s 0x4
+    IL_00b2: ldstr "/"
+    IL_00b7: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_00bc: ldloc.s 0x4
+    IL_00be: ldloc.0 
+    IL_00bf: callvirt mref System.Reflection.AssemblyTitleAttribute::.ctor
+    IL_00c4: ldloc.s 0x4
+    IL_00c6: ldstr " patch(es) applied - "
+    IL_00cb: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_00d0: ldloc.s 0x4
+    IL_00d2: ldstr "not applied: "
+    IL_00d7: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_00dc: ldloc.s 0x4
+    IL_00de: ldstr ", "
+    IL_00e3: ldloc.1 
+    IL_00e4: call SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToManaged
+    IL_00e9: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_00ee: ldloc.s 0x4
+    IL_00f0: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2Cpp
+    IL_00f5: ret 
+--- .cctor
+    IL_0000: newobj SPTushonka.Reflection.Il2Cpp.Il2CppConversions::ToIl2Cpp
+    IL_0005: stsfld SPTushonka.Reflection.Patching.ModulePatch::Missing
+    IL_000a: ret 
+### TYPE NOT FOUND: PatchProcessor
+=== SPTushonka.Reflection.Patching.PatchManager
+--- .ctor
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0006: ldarg.1 
+    IL_0007: call SPTushonka.Reflection.Il2Cpp.Il2CppInjection::Depth
+    IL_000c: stloc.0 
+    IL_000d: ldarg.0 
+    IL_000e: ldloc.0 
+    IL_000f: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppMethods::ByNativeName
+    IL_0014: ldstr " PatchManager"
+    IL_0019: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_001e: stfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_0023: ldarg.0 
+    IL_0024: ldloc.0 
+    IL_0025: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_002a: newobj SPTushonka.Reflection.Patching.ModulePatch::Summarise
+    IL_002f: stfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0034: ldarg.0 
+    IL_0035: newobj SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_003a: stfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_003f: ldarg.0 
+    IL_0040: ldarg.0 
+    IL_0041: ldfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_0046: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_004b: stfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_0050: ret 
+--- .ctor
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0006: ldarg.1 
+    IL_0007: call SPTushonka.Reflection.Il2Cpp.Il2CppInjection::Depth
+    IL_000c: stloc.0 
+    IL_000d: ldarg.0 
+    IL_000e: ldloc.0 
+    IL_000f: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppMethods::ByNativeName
+    IL_0014: ldstr " PatchManager"
+    IL_0019: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_001e: stfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_0023: ldarg.0 
+    IL_0024: ldloc.0 
+    IL_0025: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_002a: newobj SPTushonka.Reflection.Patching.ModulePatch::Summarise
+    IL_002f: stfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0034: ldarg.0 
+    IL_0035: ldarg.2 
+    IL_0036: stfld SPTushonka.Reflection.Patching.PatchManager::_autoPatch
+    IL_003b: ldarg.0 
+    IL_003c: newobj SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_0041: stfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0046: ldarg.0 
+    IL_0047: ldarg.0 
+    IL_0048: ldfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_004d: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0052: stfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_0057: ret 
+--- .ctor
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0006: ldarg.0 
+    IL_0007: ldarg.2 
+    IL_0008: ldstr " PatchManager"
+    IL_000d: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_0012: stfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_0017: ldarg.0 
+    IL_0018: ldarg.1 
+    IL_0019: newobj SPTushonka.Reflection.Patching.ModulePatch::Summarise
+    IL_001e: stfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0023: ldarg.0 
+    IL_0024: newobj SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_0029: stfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_002e: ldarg.0 
+    IL_002f: ldarg.0 
+    IL_0030: ldfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_0035: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_003a: stfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_003f: ret 
+--- .ctor
+    IL_0000: ldarg.0 
+    IL_0001: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0006: ldarg.0 
+    IL_0007: ldarg.2 
+    IL_0008: ldstr " PatchManager"
+    IL_000d: call SPTushonka.Reflection.Patching.ModulePatch::.ctor
+    IL_0012: stfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_0017: ldarg.0 
+    IL_0018: ldarg.1 
+    IL_0019: newobj SPTushonka.Reflection.Patching.ModulePatch::Summarise
+    IL_001e: stfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0023: ldarg.0 
+    IL_0024: ldarg.3 
+    IL_0025: stfld SPTushonka.Reflection.Patching.PatchManager::_autoPatch
+    IL_002a: ldarg.0 
+    IL_002b: newobj SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_0030: stfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0035: ldarg.0 
+    IL_0036: ldarg.0 
+    IL_0037: ldfld SPTushonka.Reflection.Patching.PatchManager::_patcherName
+    IL_003c: call SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0041: stfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_0046: ret 
+--- AddPatch
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.PatchManager::_autoPatch
+    IL_0006: brfalse.s 0xB
+    IL_0008: ldstr "You cannot manually add patches when using auto patching"
+    IL_000d: newobj SPTushonka.Reflection.Patching.ModulePatch::GetTargetMethod
+    IL_0012: throw 
+    IL_0013: ldarg.0 
+    IL_0014: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0019: ldarg.1 
+    IL_001a: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_001f: ret 
+--- AddPatches
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.PatchManager::_autoPatch
+    IL_0006: brfalse.s 0xB
+    IL_0008: ldstr "You cannot manually add patches when using auto patching"
+    IL_000d: newobj SPTushonka.Reflection.Patching.ModulePatch::GetTargetMethod
+    IL_0012: throw 
+    IL_0013: ldarg.0 
+    IL_0014: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0019: ldarg.1 
+    IL_001a: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::ToIl2Cpp
+    IL_001f: ret 
+--- GetPatches
+    IL_0000: newobj SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::ToIl2Cpp
+    IL_0005: stloc.0 
+    IL_0006: ldtoken typeref DebuggingModes
+    IL_000b: call SPTushonka.Reflection.Utils.PatchConstants::get_BackEndSession
+    IL_0010: stloc.1 
+    IL_0011: ldtoken typeref System.Reflection.AssemblyCopyrightAttribute
+    IL_0016: call SPTushonka.Reflection.Utils.PatchConstants::get_BackEndSession
+    IL_001b: stloc.2 
+    IL_001c: ldarg.1 
+    IL_001d: callvirt SPTushonka.Reflection.Utils.PatchConstants::SingleCustom
+    IL_0022: stloc.3 
+    IL_0023: ldc.i4.0 
+    IL_0024: stloc.s 0x4
+    IL_0026: br.s 0x4F
+    IL_0028: ldloc.3 
+    IL_0029: ldloc.s 0x4
+    IL_002b: ldelem.ref 
+    IL_002c: stloc.s 0x5
+    IL_002e: ldloc.1 
+    IL_002f: ldloc.s 0x5
+    IL_0031: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::Complete
+    IL_0036: brfalse.s 0x39
+    IL_0038: ldloc.s 0x5
+    IL_003a: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::ToIl2Cpp
+    IL_003f: brtrue.s 0x30
+    IL_0041: ldloc.s 0x5
+    IL_0043: ldloc.2 
+    IL_0044: ldc.i4.0 
+    IL_0045: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_004a: brtrue.s 0x25
+    IL_004c: ldarg.0 
+    IL_004d: ldarg.1 
+    IL_004e: call SPTushonka.Reflection.Patching.PatchManager::IsAssemblyDebugBuild
+    IL_0053: brtrue.s 0x14
+    IL_0055: ldloc.s 0x5
+    IL_0057: ldtoken typeref System.Reflection.AssemblyFileVersionAttribute
+    IL_005c: call SPTushonka.Reflection.Utils.PatchConstants::get_BackEndSession
+    IL_0061: ldc.i4.0 
+    IL_0062: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_0067: brtrue.s 0x8
+    IL_0069: ldloc.0 
+    IL_006a: ldloc.s 0x5
+    IL_006c: callvirt SPTushonka.Reflection.Il2Cpp.JobAwaitable::.ctor
+    IL_0071: ldloc.s 0x4
+    IL_0073: ldc.i4.1 
+    IL_0074: add 
+    IL_0075: stloc.s 0x4
+    IL_0077: ldloc.s 0x4
+    IL_0079: ldloc.3 
+    IL_007a: ldlen 
+    IL_007b: conv.i4 
+    IL_007c: blt.s 0xAA
+    IL_007e: ldloc.0 
+    IL_007f: ret 
+--- EnablePatches
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.PatchManager::_autoPatch
+    IL_0006: brfalse 0x10D
+    IL_000b: ldarg.0 
+    IL_000c: call SPTushonka.Reflection.Il2Cpp.JobAwaitable::get_IsCompleted
+    IL_0011: call SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0016: dup 
+    IL_0017: callvirt SPTushonka.Reflection.Il2Cpp.JobAwaitable::GetAwaiter
+    IL_001c: brtrue.s 0xB
+    IL_001e: ldstr "Could not find any patches defined in the assembly during auto patching"
+    IL_0023: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_0028: throw 
+    IL_0029: callvirt SPTushonka.Reflection.Il2Cpp.JobAwaitable::OnCompleted
+    IL_002e: stloc.0 
+    IL_002f: br 0x80
+    IL_0034: ldloca.s 
+    IL_0036: call SPTushonka.Reflection.Il2Cpp.JobAwaitable::GetResult
+    IL_003b: stloc.1 
+    IL_003c: ldloc.1 
+    IL_003d: call SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::.ctor
+    IL_0042: castclass typeref DebuggingModes
+    IL_0047: stloc.2 
+    IL_0048: ldloc.2 
+    IL_0049: ldarg.0 
+    IL_004a: ldfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_004f: callvirt SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_0054: ldarg.0 
+    IL_0055: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_005a: ldloc.2 
+    IL_005b: callvirt SPTushonka.Reflection.Il2Cpp.Il2CppTaskExtensions::AsManaged
+    IL_0060: leave.s 0x52
+    IL_0062: stloc.3 
+    IL_0063: ldarg.0 
+    IL_0064: ldfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_0069: ldc.i4.s 0x13
+    IL_006b: ldc.i4.2 
+    IL_006c: ldloca.s 0x5
+    IL_006e: newobj SPTushonka.Reflection.Patching.PatchManager::EnablePatch
+    IL_0073: stloc.s 0x4
+    IL_0075: ldloc.s 0x5
+    IL_0077: brfalse.s 0x32
+    IL_0079: ldloc.s 0x4
+    IL_007b: ldstr "Failed to init ["
+    IL_0080: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0085: ldloc.s 0x4
+    IL_0087: ldloc.1 
+    IL_0088: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_008d: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_0092: ldloc.s 0x4
+    IL_0094: ldstr "]: "
+    IL_0099: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_009e: ldloc.s 0x4
+    IL_00a0: ldloc.3 
+    IL_00a1: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::.ctor
+    IL_00a6: callvirt mref System.Reflection.AssemblyCompanyAttribute::.ctor
+    IL_00ab: ldloc.s 0x4
+    IL_00ad: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatch
+    IL_00b2: leave.s 
+    IL_00b4: ldloca.s 
+    IL_00b6: call SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::Register
+    IL_00bb: brtrue 0xFFFFFFFFFFFFFF74
+    IL_00c0: leave.s 0xE
+    IL_00c2: ldloca.s 
+    IL_00c4: constrained. typespec Enumerator<System.Type>
+    IL_00ca: callvirt SPTushonka.Reflection.Patching.PatchManager::AddPatch
+    IL_00cf: endfinally 
+    IL_00d0: ldarg.0 
+    IL_00d1: ldfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_00d6: ldc.i4.s 0x10
+    IL_00d8: ldc.i4.1 
+    IL_00d9: ldloca.s 0x5
+    IL_00db: newobj SPTushonka.Reflection.Patching.PatchManager::AddPatches
+    IL_00e0: stloc.s 0x6
+    IL_00e2: ldloc.s 0x5
+    IL_00e4: brfalse.s 0x2A
+    IL_00e6: ldloc.s 0x6
+    IL_00e8: ldstr "Enabled "
+    IL_00ed: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_00f2: ldloc.s 0x6
+    IL_00f4: ldarg.0 
+    IL_00f5: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_00fa: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::MoveNext
+    IL_00ff: callvirt mref System.Reflection.AssemblyTitleAttribute::.ctor
+    IL_0104: ldloc.s 0x6
+    IL_0106: ldstr " patches"
+    IL_010b: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0110: ldloc.s 0x6
+    IL_0112: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatches
+    IL_0117: ret 
+    IL_0118: ldarg.0 
+    IL_0119: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_011e: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::MoveNext
+    IL_0123: brtrue.s 0xB
+    IL_0125: ldstr "There were no patches to enable"
+    IL_012a: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_012f: throw 
+    IL_0130: ldc.i4.0 
+    IL_0131: stloc.s 0x7
+    IL_0133: br.s 0x1E
+    IL_0135: ldarg.0 
+    IL_0136: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_013b: ldloc.s 0x7
+    IL_013d: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::get_Current
+    IL_0142: ldarg.0 
+    IL_0143: ldfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0148: callvirt SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_014d: ldloc.s 0x7
+    IL_014f: ldc.i4.1 
+    IL_0150: add 
+    IL_0151: stloc.s 0x7
+    IL_0153: ldloc.s 0x7
+    IL_0155: ldarg.0 
+    IL_0156: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_015b: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::MoveNext
+    IL_0160: blt.s 0xD3
+    IL_0162: ret 
+--- DisablePatches
+    IL_0000: ldarg.0 
+    IL_0001: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0006: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::MoveNext
+    IL_000b: brtrue.s 0xB
+    IL_000d: ldstr "There were no patches to disable"
+    IL_0012: newobj SPTushonka.Reflection.Patching.PatchException::.ctor
+    IL_0017: throw 
+    IL_0018: ldc.i4.0 
+    IL_0019: stloc.0 
+    IL_001a: br.s 0x1B
+    IL_001c: ldarg.0 
+    IL_001d: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0022: ldloc.0 
+    IL_0023: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::get_Current
+    IL_0028: ldarg.0 
+    IL_0029: ldfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_002e: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_0033: ldloc.0 
+    IL_0034: ldc.i4.1 
+    IL_0035: add 
+    IL_0036: stloc.0 
+    IL_0037: ldloc.0 
+    IL_0038: ldarg.0 
+    IL_0039: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_003e: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::MoveNext
+    IL_0043: blt.s 0xD7
+    IL_0045: ldarg.0 
+    IL_0046: ldfld SPTushonka.Reflection.Patching.PatchManager::_autoPatch
+    IL_004b: brfalse.s 0x4C
+    IL_004d: ldarg.0 
+    IL_004e: ldfld SPTushonka.Reflection.Patching.PatchManager::_logger
+    IL_0053: ldc.i4.s 0x11
+    IL_0055: ldc.i4.1 
+    IL_0056: ldloca.s 0x2
+    IL_0058: newobj SPTushonka.Reflection.Patching.PatchManager::AddPatches
+    IL_005d: stloc.1 
+    IL_005e: ldloc.2 
+    IL_005f: brfalse.s 0x27
+    IL_0061: ldloc.1 
+    IL_0062: ldstr "Disabled "
+    IL_0067: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_006c: ldloc.1 
+    IL_006d: ldarg.0 
+    IL_006e: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0073: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::MoveNext
+    IL_0078: callvirt mref System.Reflection.AssemblyTitleAttribute::.ctor
+    IL_007d: ldloc.1 
+    IL_007e: ldstr " patches"
+    IL_0083: callvirt SPTushonka.Reflection.Patching.PatchManager::GetPatches
+    IL_0088: ldloc.1 
+    IL_0089: callvirt SPTushonka.Reflection.Patching.PatchManager::DisablePatches
+    IL_008e: ldarg.0 
+    IL_008f: ldfld SPTushonka.Reflection.Patching.PatchManager::_patches
+    IL_0094: callvirt SPTushonka.Reflection.Il2Cpp.ManagedEnumerator::System.Collections.IEnumerator.get_Current
+    IL_0099: ret 
+--- EnablePatch
+    IL_0000: ldarg.1 
+    IL_0001: ldarg.0 
+    IL_0002: ldfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0007: callvirt SPTushonka.Reflection.Patching.ModulePatch::Enable
+    IL_000c: ret 
+--- DisablePatch
+    IL_0000: ldarg.1 
+    IL_0001: ldarg.0 
+    IL_0002: ldfld SPTushonka.Reflection.Patching.PatchManager::_harmony
+    IL_0007: callvirt SPTushonka.Reflection.Patching.ModulePatch::Disable
+    IL_000c: ret 
+--- IsAssemblyDebugBuild
+    IL_0000: ldarg.1 
+    IL_0001: call mref System.Runtime.CompilerServices.RefSafetyRulesAttribute::.ctor
+    IL_0006: stloc.0 
+    IL_0007: ldloc.0 
+    IL_0008: brfalse.s 0x7
+    IL_000a: ldloc.0 
+    IL_000b: callvirt SPTushonka.Reflection.Il2Cpp.MainThread::get_IsCurrent
+    IL_0010: ret 
+    IL_0011: ldc.i4.0 
+    IL_0012: ret 

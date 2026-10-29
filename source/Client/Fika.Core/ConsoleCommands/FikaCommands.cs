@@ -1,0 +1,695 @@
+using System;
+using System.Linq;
+using Comfort.Common;
+using Diz.Jobs;
+using Diz.Utils;
+using EFT;
+using EFT.Console.Core;
+using EFT.HealthSystem;
+using EFT.InventoryLogic;
+using EFT.UI;
+using Fika.Core.Main.Components;
+using Fika.Core.Main.GameMode;
+using Fika.Core.Main.HostClasses;
+using Fika.Core.Main.Players;
+using Fika.Core.Main.Utils;
+using Fika.Core.Networking;
+using Fika.Core.Networking.Packets.Debug;
+using Fika.Core.Networking.Packets.Player;
+using HarmonyLib;
+using static Fika.Core.Networking.Packets.Debug.CommandPacket;
+
+namespace Fika.Core.ConsoleCommands;
+
+#pragma warning disable RCS1102
+public class FikaCommands
+#pragma warning restore RCS1102
+{
+#if DEBUG
+    [ConsoleCommand("bring", description: "Teleports all AI to yourself as the host")]
+    public static void Bring()
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (CoopHandler.TryGetCoopHandler(out var coopHandler))
+        {
+            if (!FikaBackendUtils.IsServer)
+            {
+                var myId = FikaSingleton<IFikaNetworkManager>.Instance.NetId;
+                CommandPacket commandPacket = new(ECommandType.Bring)
+                {
+                    NetId = myId
+                };
+
+                FikaSingleton<FikaClient>.Instance.SendData(ref commandPacket, DeliveryMethod.ReliableOrdered);
+                return;
+            }
+
+            var count = 0;
+            var targetPosition = coopHandler.MyPlayer.Transform;
+            foreach (var player in coopHandler.Players.Values)
+            {
+                if (player.IsAI && player.HealthController.IsAlive)
+                {
+                    count++;
+                    player.Teleport(targetPosition.Original.position + (targetPosition.Original.forward * 2));
+                }
+            }
+
+            LogInfo($"Teleported {count} AI to requester.");
+
+        }
+        else
+        {
+            LogWarning("Could not find CoopHandler.");
+        }
+    }
+
+    /// <summary>
+    /// Used during replication
+    /// </summary>
+    /// <param name="netId"></param>
+    public static void BringReplicated(int netId)
+    {
+        LogInfo($"Received bring request from {netId}");
+
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (CoopHandler.TryGetCoopHandler(out var coopHandler))
+        {
+            var count = 0;
+            BifacialTransform targetPosition;
+            if (coopHandler.Players.TryGetValue(netId, out var target))
+            {
+                targetPosition = target.Transform;
+            }
+            else
+            {
+                LogError($"Could not find player with netId {netId}");
+                return;
+            }
+
+            foreach (var player in coopHandler.Players.Values)
+            {
+                if (player.IsAI && player.HealthController.IsAlive)
+                {
+                    count++;
+                    player.Teleport(targetPosition.Original.position + targetPosition.Original.forward * 2);
+                }
+            }
+
+            var output = $"Teleported {count} AI to requester.";
+            LogInfo(output);
+        }
+        else
+        {
+            LogWarning("Could not find CoopHandler.");
+        }
+    }
+
+    [ConsoleCommand("simulateLag", description: "Simulates lag by adding artifical delay and packet loss")]
+    public static void SimulateLag([ConsoleArgument(true, "if lag should be simulated")] bool simulate)
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (!FikaSingleton<IFikaNetworkManager>.Instantiated)
+        {
+            return;
+        }
+
+        if (FikaBackendUtils.IsClient)
+        {
+            var client = FikaSingleton<FikaClient>.Instance;
+            client.NetClient.SimulateLatency = simulate;
+            client.NetClient.SimulatePacketLoss = simulate;
+        }
+        else
+        {
+            var server = FikaSingleton<FikaServer>.Instance;
+            server.NetServer.SimulateLatency = simulate;
+            server.NetServer.SimulatePacketLoss = simulate;
+        }
+    }
+
+    [ConsoleCommand("setDowned", description: "Sets local player to downed/not downed")]
+    public static void SetDowned([ConsoleArgument(true, "if downed or not")] bool downed)
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        var localPlayer = Singleton<GameWorld>.Instance?.MainPlayer?.TryCast<FikaPlayer>();
+        if (localPlayer == null) return;
+        localPlayer.ToggleDowned(downed);
+    }
+
+    [ConsoleCommand("heal", description: "Heals local player fully")]
+    public static void Heal()
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        var localPlayer = Singleton<GameWorld>.Instance?.MainPlayer?.TryCast<FikaPlayer>();
+        if (localPlayer == null) return;
+        localPlayer.ActiveHealthController.RestoreFullHealth();
+    }
+
+    [ConsoleCommand("killMe", description: "Kills the local player")]
+    public static void KillMe()
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        var localPlayer = Singleton<GameWorld>.Instance?.MainPlayer?.TryCast<FikaPlayer>();
+        if (localPlayer == null) return;
+        localPlayer.KillMe(EBodyPartColliderType.HeadCommon, 10_000f);
+    }
+
+    [ConsoleCommand("destroyLimb", description: "Destroys a limb")]
+    public static void DestroyLimb([ConsoleArgument(EBodyPart.Stomach, "the limb to destroy")] EBodyPart bodyPart)
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        var localPlayer = Singleton<GameWorld>.Instance?.MainPlayer?.TryCast<FikaPlayer>();
+        if (localPlayer == null) return;
+        if (localPlayer.ActiveHealthController.BodyState.TryGetValue(bodyPart, out var partState))
+        {
+            localPlayer.ActiveHealthController.ChangeHealth(bodyPart, -partState.Health.Current, DamageHelper.UndefinedDamage);
+            localPlayer.ActiveHealthController.DestroyBodyPart(bodyPart, EDamageType.Undefined);
+        }
+    }
+
+    [ConsoleCommand("god", description: "Set god mode on/off")]
+    public static void God([ConsoleArgument(false, "true or false to toggle god mode")] bool state)
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (CoopHandler.TryGetCoopHandler(out var coopHandler))
+        {
+            var value = state ? 0 : 1;
+            coopHandler.MyPlayer.ActiveHealthController.SetDamageCoeff(value);
+            if (value == 0)
+            {
+                LogInfo("God mode on");
+            }
+            else
+            {
+                LogInfo("God mode off");
+            }
+        }
+        else
+        {
+            LogWarning("Could not find CoopHandler.");
+        }
+    }
+
+    [ConsoleCommand("extract", description: "Extract from raid")]
+    public static void Extract()
+    {
+        var game = FikaSingleton<IFikaGame>.Instance;
+        if (game == null)
+        {
+            LogWarning("You are not in a game.");
+            return;
+        }
+
+        if (game is not CoopGame coopGame)
+        {
+            LogError("Game mode was not CoopGame");
+            return;
+        }
+
+        if (coopGame.Status != GameStatus.Started)
+        {
+            LogWarning("Game is not running.");
+            return;
+        }
+
+        var localPlayer = Singleton<GameWorld>.Instance?.MainPlayer?.TryCast<FikaPlayer>();
+        if (localPlayer == null) return;
+
+        coopGame.Extract(localPlayer, null);
+    }
+
+    [ConsoleCommand("despawnAllAi", description: "Despawns all AI bots")]
+    public static void DespawnAllAI()
+    {
+        var fikaGame = FikaSingleton<IFikaGame>.Instance;
+        if (fikaGame != null)
+        {
+            if (!FikaBackendUtils.IsServer)
+            {
+                CommandPacket commandPacket = new(ECommandType.DespawnAI);
+
+                FikaSingleton<FikaClient>.Instance.SendData(ref commandPacket, DeliveryMethod.ReliableOrdered);
+                return;
+            }
+
+            if (CoopHandler.TryGetCoopHandler(out var coopHandler))
+            {
+                foreach (var bot in fikaGame.GameController.Bots.Values.ToArray())
+                {
+                    if (bot == null || bot.AIData.BotOwner == null)
+                    {
+                        continue;
+                    }
+
+                    LogInfo($"Despawning: {bot.Profile.Nickname}");
+
+                    (fikaGame.GameController as HostGameController).DespawnBot(coopHandler, bot);
+                }
+                return;
+            }
+
+            LogError("Could not find CoopHandler!");
+        }
+    }
+
+    [ConsoleCommand("stoptimer", description: "Stops the game timer")]
+    public static void StopTimer()
+    {
+        var fikaGame = FikaSingleton<IFikaGame>.Instance;
+        if (fikaGame == null || fikaGame is not CoopGame coopGame)
+        {
+            LogError("Game was null or not a CoopGame");
+            return;
+        }
+
+        if (coopGame != null)
+        {
+            if (coopGame.GameTimer.Status == GameTimer.EGameTimerStatus.Stopped)
+            {
+                LogError("GameTimer is already stopped at: " + coopGame.GameTimer.PastTime.ToString());
+                return;
+            }
+            coopGame.GameTimer.TryStop();
+            if (coopGame.GameTimer.Status == GameTimer.EGameTimerStatus.Stopped)
+            {
+                LogInfo("GameTimer stopped at: " + coopGame.GameTimer.PastTime.ToString());
+            }
+        }
+    }
+
+    [ConsoleCommand("goToBTR", description: "Teleports you to the BTR if active")]
+    public static void GoToBTR()
+    {
+        var fikaGame = FikaSingleton<IFikaGame>.Instance;
+        if (fikaGame == null || fikaGame is not CoopGame coopGame)
+        {
+            LogError("Game was null or not a CoopGame");
+            return;
+        }
+
+        if (coopGame != null)
+        {
+            var gameWorld = coopGame.GameWorld;
+            if (gameWorld != null)
+            {
+                if (gameWorld.BtrController != null)
+                {
+                    var btrTransform = gameWorld.BtrController.BtrView._cachedTransform;
+                    if (btrTransform != null)
+                    {
+                        var myPlayer = gameWorld.MainPlayer;
+                        if (myPlayer != null)
+                        {
+                            myPlayer.Teleport(btrTransform.position + (Vector3.forward * 3));
+                        }
+                    }
+                }
+                else
+                {
+                    LogWarning("There is no BTRController active!");
+                }
+            }
+        }
+    }
+
+    [ConsoleCommand("spawnItem", description: "Spawns an item from a templateId")]
+    public static void SpawnItem([ConsoleArgument("", "The templateId to spawn an item from")] string templateId,
+        [ConsoleArgument(1, "The amount to spawn if the item can stack")] int amount = 1)
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        var gameWorld = Singleton<GameWorld>.Instance;
+        var player = gameWorld.MainPlayer?.TryCast<FikaPlayer>();
+        if (player == null) return;
+        if (!player.HealthController.IsAlive)
+        {
+            LogError("You cannot spawn an item while dead!");
+            return;
+        }
+
+        var itemFactory = Singleton<ItemFactory>.Instance;
+        if (itemFactory == null)
+        {
+            LogError("ItemFactory was null!");
+            return;
+        }
+
+        var item = itemFactory.GetPresetItem(templateId);
+        if (amount > 1 && item.StackMaxSize > 1)
+        {
+            item.StackObjectsCount = Mathf.Clamp(amount, 1, item.StackMaxSize);
+        }
+        else
+        {
+            item.StackObjectsCount = 1;
+        }
+        FikaGlobals.SpawnItemInWorld(item, player);
+
+        SpawnItemPacket packet = new()
+        {
+            NetId = player.NetId,
+            Item = item
+        };
+
+        FikaSingleton<IFikaNetworkManager>.Instance.SendData(ref packet, DeliveryMethod.ReliableOrdered);
+    }
+
+    [ConsoleCommand("spawnItemInInventory", description: "Spawns an item from a templateId in your inventory")]
+    public static void SpawnItemInInventory([ConsoleArgument("", "The templateId to spawn an item from")] string templateId,
+        [ConsoleArgument(1, "The amount to spawn if the item can stack")] int amount = 1)
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        var gameWorld = Singleton<GameWorld>.Instance;
+        var player = gameWorld.MainPlayer?.TryCast<FikaPlayer>();
+        if (player == null) return;
+        if (!player.HealthController.IsAlive)
+        {
+            LogError("You cannot spawn an item while dead!");
+            return;
+        }
+
+        var itemFactory = Singleton<ItemFactory>.Instance;
+        if (itemFactory == null)
+        {
+            LogError("ItemFactory was null!");
+            return;
+        }
+
+        var item = itemFactory.CreateItem(MongoID.Generate(), templateId, null);
+        LogInfo($"Created item {item.LocalizedName()}");
+        if (amount > 1 && item.StackMaxSize > 1)
+        {
+            item.StackObjectsCount = Mathf.Clamp(amount, 1, item.StackMaxSize);
+        }
+        else
+        {
+            item.StackObjectsCount = 1;
+        }
+
+        var stash = FikaSingleton<IFikaNetworkManager>.Instance.TemporaryStash;
+        var grid = stash.Grid;
+        var tempMove = FikaSingleton<IFikaNetworkManager>.Instance.TemporaryStash.Grid.AddItemWithoutRestrictions(item, grid.FindFreeSpace(item));
+        if (tempMove.Failed)
+        {
+            LogError($"Failed to move item to temporary stash: {tempMove.Error}");
+            return;
+        }
+
+        LogInfo($"Item is in {item.Parent.ContainerName}");
+
+        new ItemController(stash, player.InventoryController.ID, "temp item stash", false, EOwnerType.Profile);
+
+        try
+        {
+            var rootItem = player.InventoryController.RootItem?.TryCast<CompoundItem>();
+            if (rootItem == null)
+            {
+                LogError("Inventory root was not a CompoundItem");
+                return;
+            }
+            var moveResult = ItemManipulator.QuickFindAppropriatePlace(item, player.InventoryController,
+                rootItem.ToEnumerable(),
+                ItemManipulator.EMoveItemOrder.IgnoreItemParent, true);
+
+            if (moveResult.Failed)
+            {
+                LogError("Failed to spawn item in inventory");
+                return;
+            }
+
+            LogInfo($"Moved to: {moveResult.Value.ResultItem.Parent.ContainerName}");
+
+            player.InventoryController.ConvertOperationResultToOperation(moveResult.Value).Execute(result =>
+            {
+                if (result.Failed)
+                {
+                    LogError($"Operation failed: {result.Error}");
+                }
+                else
+                {
+                    LogInfo($"Moved item to: {item.Parent.ContainerName}");
+                }
+            });
+
+            Singleton<ObjectsFactory>.Instance.LoadBundlesAndCreatePools(ObjectsFactory.PoolsCategory.Raid, ObjectsFactory.AssemblyType.Online,
+                item.Template.AllResources.ToHashSet(), JobYieldPriority.Immediate, null, new Il2CppSystem.Threading.CancellationToken())
+                .HandleExceptions();
+
+            var packet = new SpawnItemInInventoryPacket
+            {
+                NetId = player.NetId,
+                ItemId = item.Id,
+                TemplateId = templateId,
+                Amount = amount,
+                ItemAddress = item.Parent
+            };
+
+            FikaSingleton<IFikaNetworkManager>.Instance.SendData(ref packet, DeliveryMethod.ReliableOrdered);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex.ToString());
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Based on SSH's TarkyMenu command
+    /// </summary>
+    /// <param name="wildSpawnType"></param>
+    /// <param name="amount"></param>
+    [ConsoleCommand("spawnNPC", description: "Spawn NPC with specified WildSpawnType")]
+    public static void SpawnNPC([ConsoleArgument("assault", "The WildSpawnType to spawn (use help for a list)")] string wildSpawnType,
+        [ConsoleArgument(1, "The amount of AI to spawn")] int amount)
+    {
+        if (string.IsNullOrEmpty(wildSpawnType) || string.Equals(wildSpawnType, "help", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (WildSpawnType availableSpawnType in Enum.GetValues(typeof(WildSpawnType)))
+            {
+                LogInfo(availableSpawnType.ToString());
+            }
+            LogInfo("- Available WildSpawnType options below -");
+            return;
+        }
+
+        if (amount <= 0)
+        {
+            LogInfo($"Invalid number: {amount}. Please enter a valid, positive integer.");
+            return;
+        }
+
+        if (!Enum.TryParse(wildSpawnType, true, out WildSpawnType selectedSpawnType))
+        {
+            LogInfo($"Invalid WildSpawnType: {wildSpawnType}");
+            return;
+        }
+
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (!FikaBackendUtils.IsServer)
+        {
+            CommandPacket commandPacket = new(ECommandType.SpawnAI)
+            {
+                SpawnType = wildSpawnType,
+                SpawnAmount = amount
+            };
+
+            FikaSingleton<FikaClient>.Instance.SendData(ref commandPacket, DeliveryMethod.ReliableOrdered);
+            return;
+        }
+
+        SpawnWave newBotData = new()
+        {
+            BotsCount = amount,
+            Side = EPlayerSide.Savage,
+            SpawnAreaName = "",
+            Time = 0f,
+            WildSpawnType = selectedSpawnType,
+            IsPlayers = false,
+            Difficulty = BotDifficulty.easy,
+            ChanceGroup = 100f,
+            WithCheckMinMax = false
+        };
+
+        var botController = (FikaSingleton<IFikaGame>.Instance.GameController as HostGameController).BotsController;
+        if (botController == null)
+        {
+            LogError("BotsController was null!");
+            return;
+        }
+
+        botController.BotSpawner.ActivateBotsByWave(newBotData);
+        LogInfo($"SpawnNPC completed, requested {amount} of {wildSpawnType}");
+    }
+
+    [ConsoleCommand("spawnAirdrop", description: "Spawns an airdrop")]
+    public static void SpawnAirdrop()
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (!FikaBackendUtils.IsServer)
+        {
+            CommandPacket commandPacket = new(ECommandType.SpawnAirdrop);
+
+            FikaSingleton<FikaClient>.Instance.SendData(ref commandPacket, DeliveryMethod.ReliableOrdered);
+            return;
+        }
+
+        var gameWorld = Singleton<GameWorld>.Instance?.TryCast<FikaHostGameWorld>();
+        if (gameWorld == null)
+        {
+            LogError("GameWorld does not exist or you are a client!");
+            return;
+        }
+
+        var serverAirdropManager = gameWorld.ClientSynchronizableObjectLogicProcessor.ServerAirdropManager;
+        if (serverAirdropManager == null)
+        {
+            LogError("ServerAirdropManager was null!");
+            return;
+        }
+
+        if (!serverAirdropManager.CanSummonAirdrop)
+        {
+            LogError("Airdrops are disabled!");
+            return;
+        }
+
+        var dropPoints = serverAirdropManager._projectileSuccessPositions;
+        if (dropPoints != null && dropPoints.Count > 0)
+        {
+            var templateId = serverAirdropManager._overrideLootTemplateId;
+            serverAirdropManager.UpdateAirdropTimers(serverAirdropManager.PlaneAirdropCooldown);
+            gameWorld.InitAirdrop(templateId, true, serverAirdropManager.GetEquidistantPoint());
+            serverAirdropManager._overrideLootTemplateId = null;
+            dropPoints.Clear();
+            LogInfo("Started airdrop");
+            return;
+        }
+
+        serverAirdropManager.UpdateAirdropTimers(serverAirdropManager.PlaneAirdropCooldown);
+        gameWorld.InitAirdrop();
+        LogInfo("Started airdrop");
+    }
+#endif
+    public static void Debug(bool state)
+    {
+        var fikaGame = FikaSingleton<IFikaGame>.Instance;
+        if (fikaGame == null || fikaGame is not CoopGame coopGame)
+        {
+            LogError("Game was null or not a CoopGame");
+            return;
+        }
+
+        if (coopGame.Status != GameStatus.Started)
+        {
+            LogWarning("Game is not running.");
+            return;
+        }
+
+        coopGame.ToggleDebug(state);
+    }
+    public static void OpenAdminUI()
+    {
+        if (!CheckForGame())
+        {
+            return;
+        }
+
+        if (!FikaBackendUtils.IsServer)
+        {
+            LogWarning("You are not the host!");
+            return;
+        }
+
+        Singleton<PreloaderUI>.Instance.Console.Close();
+        FikaSingleton<FikaServer>.Instance.ToggleAdminUI();
+    }
+    public static void Clear()
+    {
+        Singleton<PreloaderUI>.Instance.Console.Clear();
+    }
+
+    private static bool CheckForGame()
+    {
+        var fikaGame = FikaSingleton<IFikaGame>.Instance;
+        if (fikaGame == null)
+        {
+            LogError("Game was null");
+            return false;
+        }
+
+        if (fikaGame.GameController.GameInstance.Status != GameStatus.Started)
+        {
+            LogWarning("Game is not running.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private static void LogInfo(string message)
+    {
+        ConsoleScreen.Log(message);
+        FikaGlobals.LogInfo(message);
+    }
+
+    private static void LogWarning(string message)
+    {
+        ConsoleScreen.LogWarning(message);
+        FikaGlobals.LogInfo(message);
+    }
+
+    private static void LogError(string message)
+    {
+        ConsoleScreen.LogError(message);
+        FikaGlobals.LogError(message);
+    }
+}
+

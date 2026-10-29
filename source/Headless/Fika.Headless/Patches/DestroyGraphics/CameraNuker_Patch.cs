@@ -1,0 +1,78 @@
+﻿using EFT.CameraControl;
+using SPTushonka.Reflection.Patching;
+using System.Collections.Generic;
+using System.Reflection;
+
+namespace Fika.Headless.Patches.DestroyGraphics;
+
+/// <summary>
+/// This patch deletes various effects out of the player's camera that the headless will never see.
+/// </summary>
+public class CameraNuker : ModulePatch
+{
+    // Whitelisted types we can delete out of the camera that will not cause it to throw exceptions.
+    private static List<string> _deleteTypes = [
+        "HBAO",
+        "TOD_Scattering",
+        "MBOIT_Scattering",
+        "Undithering",
+        "ContactShadows",
+        "NightVision",
+        "ThermalVision",
+        "Bloom",
+        "UltimateBloom",
+        "AmbientOcclusion",
+        "PrismEffects",
+        "BloomAndFlares",
+        "DesaturateEffect",
+        "Antialiasing",
+        "SceneCameraFollow",
+        "ChromaticAberration",
+        "FastBlur",
+        "TextureMask",
+        "Tonemapping",
+        "RainScreenDrops",
+        "ScreenWater",
+        "SSAOMask",
+        "DepthOfField",
+        "InfectionEffect",
+        "InventoryBlur",
+        "CC_BleachBypass",
+        "CC_ContrastVignette",
+        "CC_DoubleVision",
+        "CC_HueFocus",
+        "CC_RadialBlur",
+        "CC_Sharpen",
+        "CC_Technicolor",
+        "CC_FastVignette",
+        "CC_Blend",
+        "CC_Wiggle",
+        "CC_Vintage",
+        "CC_BrightnessContrastGamma",
+        "PostprocessGrayscale",
+        "MotionBlur",
+        "HysteresisFilter",
+        "DistortCameraFX",
+        ];
+
+    protected override MethodBase GetTargetMethod()
+    {
+        return typeof(CameraManager).GetMethod(nameof(CameraManager.InitCamera));
+    }
+
+    [PatchPostfix]
+    public static void Postfix(CameraManager __instance)
+    {
+        var components = __instance.Camera.GetComponents(Il2CppInterop.Runtime.Il2CppType.Of<MonoBehaviour>());
+
+        foreach (var component in components)
+        {
+            var type = component.GetIl2CppType().Name;
+
+            if (_deleteTypes.Contains(type))
+            {
+                Object.Destroy(component);
+            }
+        }
+    }
+}

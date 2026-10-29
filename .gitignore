@@ -1,0 +1,25 @@
+# --- 构建产物 ---
+**/bin/
+**/obj/
+.build/
+*.user
+.vs/
+# --- 备份与本地快照 ---
+**/*.bak
+**/*.bak-*
+**/*.bak.*
+**/*.restore-*
+# --- 暂存/打包中间目录 ---
+**/staging/
+**/staging-*/
+# --- 历史发布包：只保留最新两个（见下方例外）---
+release/*
+!release/*W47b-client-server*.zip
+!release/*W47-headless*.zip
+# --- 大体积/不可分发的分析附件 ---
+analysis/*.rar
+analysis/rollback-server/
+analysis/AUDIT-latest.txt
+# --- 运行期日志 ---
+*.log
+logs/

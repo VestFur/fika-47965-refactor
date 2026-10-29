@@ -1,0 +1,2 @@
+
+| 2026-10-19 | W5-terminal-gear `Fika-47965-refactor-20261019-W5-terminal-gear.zip` | 方案 A 第一实现：新增 `Main/GameMode/TerminalArmory.cs`，在 `HostGameController.InitializeLoot` 序列化 loot descriptor **之前**，对 terminal 地图把每名玩家的 `Inventory.Equipment`（`EFT.InventoryLogic.Item`）注入 5 个军械库容器条目（`Id = container_Terminal_Design_Stuff_00159/…67`，`IsContainer=true`，`ValidProfiles=null` 以绕过 `FilterLootForHostProfile`），5 容器 = 5 玩家一一对应；构建 0 error。**限制**：目前只注入，尚未从玩家身上移除原件（会造成同一装备既在身上又在柜中），玩家侧剥离是下一步 |

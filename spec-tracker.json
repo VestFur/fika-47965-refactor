@@ -1,0 +1,7 @@
+[
+ {
+  "file": "mods/fika-47965-refactor/REFACTOR-TRACKER.md",
+  "old": "| 2026-10-18 | W1a | 删除 source/tests、source/docs、source/scripts（不参与构建）；LoadSync.Report 置空（A16）；**修正 A20**：PoseWriteGuards 是性能守卫，保留 |",
+  "new": "| 2026-10-18 | W1a `Fika-47965-refactor-20261018-W1a.zip`（`FC4A4C13…`，52 条目） | 删除 source/tests、source/docs、source/scripts（不参与构建）；LoadSync.Report 置空（A16）；**修正 A20**：PoseWriteGuards 是性能守卫，保留 |"
+ }
+]

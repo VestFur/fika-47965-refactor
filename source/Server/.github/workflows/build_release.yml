@@ -1,0 +1,62 @@
+name: Build And Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+      build_type:
+        type: choice
+        description: The build configuration (e.g., Release)
+        required: true
+        options: 
+        - Release
+        - Debug
+      release_notes:
+        description: 'Release Notes (optional)'
+        required: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+          cache: true
+          cache-dependency-path: 'FikaServer/packages.lock.json'
+
+      - name: Restore dependencies
+        run: dotnet restore FikaServer.slnx
+
+      - name: Publish the project
+        run: dotnet publish FikaServer/FikaServer.csproj --configuration ${{ inputs.build_type }} --no-restore --output output/
+
+      - name: Copy loose files
+        run: |
+          mkdir -p SPT_Runtime/user/mods/fika-server
+          cp -r output/FikaServer.dll SPT_Runtime/user/mods/fika-server
+          cp -r output/FikaShared.dll SPT_Runtime/user/mods/fika-server
+          cp -r FikaServer/Assets SPT_Runtime/user/mods/fika-server/assets
+          cp Licenses/* SPT_Runtime/user/mods/fika-server
+
+      - name: Zip the build and loose files
+        run: zip -r "Fika Server Release ${{ inputs.release_version }}.zip" SPT_Runtime/user/mods/fika-server
+
+      - name: Create GitHub Release Draft
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: "v${{ inputs.release_version }}"
+          name: "Fika Server Release ${{ inputs.release_version }}"
+          body: ${{ inputs.release_notes }}
+          draft: true
+          files: |
+            Fika Server Release ${{ inputs.release_version }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}

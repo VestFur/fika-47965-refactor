@@ -1,0 +1,139 @@
+﻿using FikaServer.Models.Enums;
+using FikaServer.Models.Fika.Config;
+using FikaServer.Models.Fika.Headless;
+using FikaServer.Services.Headless;
+using SPTarkov.Common.Models.Logging;
+using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Models.Common;
+using SPTarkov.Server.Core.Servers;
+using System.Collections.Concurrent;
+
+namespace FikaServer.Helpers;
+
+[Injectable]
+public class HeadlessHelper(FikaServerConfig fikaServerConfig, SaveServer saveServer, HeadlessService headlessService,
+    HeadlessProfileService headlessProfileService, ISptLogger<HeadlessHelper> logger)
+{
+    /// <summary>
+    /// Gets all currently logged in headlesses
+    /// </summary>
+    /// <returns>A <see cref="ConcurrentDictionary{TKey, TValue}"/> where the key is the sessionID and the value is an IHeadlessClientInfo object</returns>
+    public ConcurrentDictionary<MongoId, HeadlessClientInfo> HeadlessClients
+    {
+        get
+        {
+            return headlessService.HeadlessClients;
+        }
+    }
+
+    /// <summary>
+    /// Allows for checking if a SessionID is a headless client
+    /// </summary>
+    /// <param name="sessionId">The sessionID to check</param>
+    /// <returns>Returns true if the passed sessionID is a headless, returns false if not.</returns>
+    public bool IsHeadlessClient(MongoId sessionId)
+    {
+        return headlessProfileService.HeadlessProfiles
+            .Any(x => x.ProfileInfo?.ProfileId == sessionId);
+    }
+
+    /// <summary>
+    /// Allows for checking if the given headless client is available
+    /// </summary>
+    /// <param name="headlessSessionID"></param>
+    /// <returns>Returns true if it's available, returns false if it isn't available.</returns>
+    public bool IsHeadlessClientAvailable(MongoId headlessSessionID)
+    {
+        if (headlessService.HeadlessClients.TryGetValue(headlessSessionID, out var headlessClientInfo))
+        {
+            lock (headlessClientInfo)
+            {
+                return headlessClientInfo.State is EHeadlessStatus.READY &&
+                    headlessClientInfo.ClientReady && !headlessClientInfo.IsReconnecting &&
+                    headlessClientInfo.RequesterSessionID == null &&
+                    headlessClientInfo.WebSocket.State == System.Net.WebSockets.WebSocketState.Open;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the requester's username for a headless client if there is any.
+    /// </summary>
+    /// <param name="headlessSessionID"></param>
+    /// <returns>The nickname if the headless has been requested by a user, returns null if not.</returns>
+    public string? GetRequesterUsername(MongoId headlessSessionID)
+    {
+        if (headlessService.HeadlessClients.TryGetValue(headlessSessionID, out var headlessClientInfo))
+        {
+            string? requesterSessionId;
+            lock (headlessClientInfo)
+                requesterSessionId = headlessClientInfo.RequesterSessionID;
+
+            if (string.IsNullOrEmpty(requesterSessionId))
+            {
+                return null;
+            }
+
+            var nickname = saveServer.GetProfile(requesterSessionId)?.CharacterData?.PmcData?.Info?.Nickname;
+            if (string.IsNullOrEmpty(nickname))
+            {
+                return null;
+            }
+
+            return nickname;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the alias (If it has been given one) or nickname of the headless client
+    /// </summary>
+    /// <param name="headlessSessionID"></param>
+    /// <returns>the alias, or nickname or the headless client.</returns>
+    public string GetHeadlessNickname(MongoId headlessSessionID)
+    {
+        if (fikaServerConfig.Headless.Profiles.Aliases.TryGetValue(headlessSessionID, out var alias))
+        {
+            return alias;
+        }
+
+        var nickname = saveServer.GetProfile(headlessSessionID)?.CharacterData?.PmcData?.Info?.Nickname;
+        if (string.IsNullOrEmpty(nickname))
+        {
+            return "ERROR";
+        }
+
+        return nickname;
+    }
+
+    /// <summary>
+    /// Gets all available headless clients
+    /// </summary>
+    /// <returns>Returns an array of available headless clients</returns>
+    public HeadlessAvailableClients[] GetAvailableHeadlessClients()
+    {
+        List<string> availableClients = [];
+        foreach (var (sessionId, headlessClient) in HeadlessClients)
+        {
+            lock (headlessClient)
+            {
+                if (headlessClient.State == EHeadlessStatus.READY &&
+                    headlessClient.ClientReady && !headlessClient.IsReconnecting &&
+                    headlessClient.RequesterSessionID == null &&
+                    headlessClient.WebSocket.State == System.Net.WebSockets.WebSocketState.Open)
+                    availableClients.Add(sessionId);
+            }
+        }
+
+        List<HeadlessAvailableClients> result = [];
+        foreach (var sessionId in availableClients)
+        {
+            result.Add(new(sessionId, GetHeadlessNickname(sessionId)));
+        }
+
+        return [.. result];
+    }
+}

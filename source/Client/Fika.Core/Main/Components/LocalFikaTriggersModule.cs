@@ -1,0 +1,59 @@
+using EFT.Ballistics;
+using System;
+using Comfort.Common;
+using EFT;
+using EFT.GameTriggers;
+using Fika.Core.Main.Utils;
+
+namespace Fika.Core.Main.Components;
+
+internal class LocalFikaTriggersModule : LocalClientTriggersModule
+{
+    public LocalFikaTriggersModule(System.IntPtr pointer) : base(pointer)
+    {
+        Il2CppInterop.Runtime.Injection.ClassInjector.InvokeBaseConstructor<LocalClientTriggersModule>(this);
+    }
+
+
+    public LocalFikaTriggersModule() : this(Il2CppInterop.Runtime.Injection.ClassInjector.DerivedConstructorPointer<LocalFikaTriggersModule>())
+    {
+        Il2CppInterop.Runtime.Injection.ClassInjector.DerivedConstructorBody(this);
+    }
+
+    public override bool ApplyDamage(int playerRaidId, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<DamageData> damageData)
+    {
+        var clientLocalGameWorld = Singleton<GameWorld>.Instance?.TryCast<ClientLocalGameWorld>();
+        if (clientLocalGameWorld == null)
+        {
+            FikaGlobals.LogWarning($"GameWorld was not of correct type, was {Singleton<GameWorld>.Instance.GetType().Name}");
+            return false;
+        }
+
+        for (var i = 0; i < clientLocalGameWorld.AllAlivePlayersList.Count; i++)
+        {
+            var player = clientLocalGameWorld.AllAlivePlayersList[i];
+            if (player.RaidId == playerRaidId)
+            {
+                if (player.IsYourPlayer || player.IsAI)
+                {
+                    foreach (var damageData2 in damageData)
+                    {
+                        if (PlayerBones.BodyPartCollidersStaticMap.TryGetValue(damageData2.BodyPartColliderType, out var ebodyPart))
+                        {
+                            var damageInfoStruct = new DamageInfo
+                            {
+                                BodyPartColliderType = damageData2.BodyPartColliderType,
+                                Damage = damageData2.Amount,
+                                DamageType = EDamageType.Environment
+                            };
+                            player.ApplyDamageInfo(damageInfoStruct, ebodyPart, damageData2.BodyPartColliderType, damageData2.Amount);
+                        }
+                    }
+                    return player.HealthController.IsAlive;
+                }
+            }
+        }
+
+        return false;
+    }
+}

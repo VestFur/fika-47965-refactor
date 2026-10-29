@@ -1,0 +1,73 @@
+using Comfort.Common;
+using EFT;
+using EFT.Interactive;
+using Fika.Core.Main.HostClasses;
+using Fika.Core.Main.Utils;
+
+namespace Fika.Core.Main.Components;
+
+internal class CorpsePositionSyncer : MonoBehaviour
+{
+    public CorpsePositionSyncer(System.IntPtr pointer) : base(pointer) { }
+
+
+    public CorpsePositionSyncer() : this(Il2CppInterop.Runtime.Injection.ClassInjector.DerivedConstructorPointer<CorpsePositionSyncer>())
+    {
+        Il2CppInterop.Runtime.Injection.ClassInjector.DerivedConstructorBody(this);
+    }
+
+    private Corpse _corpse;
+    private CorpseSyncPacket _data;
+    private FikaHostWorld _world;
+    private int _counter;
+
+    public static void Create(GameObject gameObject, Corpse corpse, int netId)
+    {
+        var corpsePositionSyncer = gameObject.AddComponent<CorpsePositionSyncer>();
+        corpsePositionSyncer._corpse = corpse;
+        corpsePositionSyncer._world = (FikaHostWorld)Singleton<GameWorld>.Instance.World;
+        corpsePositionSyncer._counter = 0;
+        corpsePositionSyncer._data = new()
+        {
+            Id = netId
+        };
+    }
+
+    public void Start()
+    {
+        if (_corpse == null)
+        {
+            FikaGlobals.LogError("CorpsePositionSyncer::Start: Corpse was null!");
+            Destroy(this);
+            return;
+        }
+
+        if (!_corpse.HasRagdoll)
+        {
+            FikaGlobals.LogError("CorpsePositionSyncer::Start: Ragdoll was null!");
+            Destroy(this);
+            return;
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        if (_corpse.Ragdoll._isPhysicsDone)
+        {
+            _data.Position = _corpse.TrackableTransform.position;
+            _data.TransformSyncs = _corpse.TransformSyncs;
+            _data.Done = true;
+            _world.WorldPacket.RagdollPackets.Add(_data);
+            Destroy(this);
+            return;
+        }
+
+        _counter++;
+        if (_counter % 4 == 0)
+        {
+            _counter = 0;
+            _data.Position = _corpse.TrackableTransform.position;
+            _world.WorldPacket.RagdollPackets.Add(_data);
+        }
+    }
+}

@@ -1,0 +1,91 @@
+using Comfort.Common;
+using EFT;
+using EFT.AssetsManager;
+using EFT.Communications;
+using Fika.Core.Main.GameMode;
+using Fika.Core.Main.Players;
+using Fika.Core.Main.Utils;
+using Fika.Core.Networking.Pooling;
+using static Fika.Core.UI.FikaUIGlobals;
+
+namespace Fika.Core.Networking.Packets.Generic.SubPackets;
+
+public sealed class ClientExtract : IPoolSubPacket
+{
+    public int NetId;
+
+    private ClientExtract() { }
+
+    public static ClientExtract CreateInstance()
+    {
+        return new ClientExtract();
+    }
+
+    public static ClientExtract FromValue(int netId)
+    {
+        var packet = GenericSubPacketPoolManager.Instance.GetPacket<ClientExtract>(EGenericSubPacketType.ClientExtract);
+        packet.NetId = netId;
+        return packet;
+    }
+
+    public void Execute(FikaPlayer player = null)
+    {
+        var coopHandler = FikaSingleton<IFikaNetworkManager>.Instance.CoopHandler;
+        if (FikaBackendUtils.IsServer) Fika.Core.Main.Components.FikaFinalMissionDirector.PlayerExtracted(NetId);
+        if (coopHandler == null)
+        {
+            FikaGlobals.LogWarning("ClientExtract: CoopHandler was null! This is probably harmless.");
+            return;
+        }
+
+        if (coopHandler.Players.TryGetValue(NetId, out var playerToApply))
+        {
+            if (FikaBackendUtils.IsServer) Fika.Core.Main.Components.RaidInteractionSync.OnDisconnected(playerToApply);
+            coopHandler.Players.Remove(NetId);
+            coopHandler.HumanPlayers.Remove(playerToApply);
+            if (!coopHandler.ExtractedPlayers.Contains(NetId))
+            {
+                coopHandler.ExtractedPlayers.Add(NetId);
+                var fikaGame = FikaSingleton<IFikaGame>.Instance;
+                if (fikaGame != null)
+                {
+                    fikaGame.ExtractedPlayers.Add(NetId);
+                    if (FikaBackendUtils.IsServer)
+                    {
+                        if (fikaGame.GameController is HostGameController hostGameController)
+                            hostGameController.ClearHostAI(playerToApply);
+                    }
+
+                    if (FikaPlugin.Instance.Settings.ShowNotifications.Value)
+                    {
+                        var nickname = !string.IsNullOrEmpty(playerToApply.Profile.Info.MainProfileNickname) ? playerToApply.Profile.Info.MainProfileNickname : playerToApply.Profile.Nickname;
+                        FikaNotifications.DisplayMessageNotification(string.Format(LocaleUtils.GROUP_MEMBER_EXTRACTED.Localized(),
+                            ColorizeText(EColor.GREEN, nickname)),
+                        EFT.Communications.ENotificationDurationType.Default, EFT.Communications.ENotificationIconType.EntryPoint);
+                    }
+                }
+            }
+
+            if (playerToApply != null)
+            {
+                playerToApply.Dispose();
+                AssetPoolObject.ReturnToPool(playerToApply.gameObject, true);
+            }
+        }
+    }
+
+    public void Serialize(NetDataWriter writer)
+    {
+        writer.Put(NetId);
+    }
+
+    public void Deserialize(NetDataReader reader)
+    {
+        NetId = reader.GetInt();
+    }
+
+    public void Dispose()
+    {
+        NetId = 0;
+    }
+}
