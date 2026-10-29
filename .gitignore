@@ -26,3 +26,7 @@
 logs/
 source/*/References/
 
+
+**/obj-*/
+**/bin-*/
+
