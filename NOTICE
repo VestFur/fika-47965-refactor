@@ -1,0 +1,55 @@
+# NOTICE / Attribution
+
+This repository is a **modified derivative** of Project Fika, distributed under the same
+license as the upstream work.
+
+## Upstream project
+
+- **Project Fika** — https://github.com/project-fika/Fika-Plugin
+- Original authors: **Lacyway and the Fika team**
+- License: **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International**
+  (https://creativecommons.org/licenses/by-nc-sa/4.0/)
+- Full license text: see [LICENSE](LICENSE)
+
+## Modifications
+
+This fork targets **SPT 5.0 / EFT 1.2.0.47965** and contains changes relative to the
+upstream sources (bug fixes, behaviour changes, and removed/added code). A summary is in
+[MODIFICATIONS.md](MODIFICATIONS.md). Per CC BY 4.0 §3(a)(1)(B), these modifications are
+indicated so that downstream users can tell the original work from the modified one.
+
+Maintainer of this fork: **VestFur**
+
+## Derived from Single Player Tarkov
+
+Parts of the server component reference and build against **Single Player Tarkov (SPT)**:
+
+- https://github.com/sp-tarkov/server-csharp — author **Refringe**
+- License: **CC BY-NC-SA 4.0** (see `source/Server/Licenses/LICENSE-SPT.md`)
+
+## Bundled third-party components
+
+These keep their own licenses; the license files are shipped alongside the code:
+
+| Component | License | License file |
+|---|---|---|
+| LiteNetLib | MIT | `source/Client/Licenses/LICENSE-LiteNetLib.md`, `source/Server/Licenses/LICENSE-LiteNetLib.md` |
+| Open.NAT | MIT | `source/Client/Licenses/LICENSE-Open.NAT.md` |
+| Mirror (hlapi subset) | MIT | `source/Client/Licenses/LICENSE-Mirror.md` |
+| K4os LZ4 | MIT | `source/Client/Licenses/LICENSE-K40s-LZ4.md` |
+| SIT | NCSA Open Source License | `source/Client/Licenses/LICENSE-SIT.md` |
+
+## What this repository does NOT contain
+
+- **No Battlestate Games code or assets.** No `bsg.*.dll`, no `UnityEngine*.dll`, no
+  commercial Unity assets (DOTween, Sirenix/Odin, Dissonance), no `Assembly-CSharp`
+  interop dumps, no `GameAssembly.dll`, no game data (`EscapeFromTarkov_Data`).
+- **No SPT binaries.** `hollowed.dll` and the `spt-*.dll` assemblies are not redistributed;
+  they are resolved from the user's own SPT installation at build time via `-p:GameDir`.
+- **No user data.** No profiles, no session logs, no credentials.
+
+## Non-commercial
+
+This work is licensed for non-commercial use only. It may not be sold, put behind a
+paywall, or offered as a paid service. Redistribution and derivatives must remain under
+CC BY-NC-SA 4.0 and must credit the original authors above.

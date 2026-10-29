@@ -24,3 +24,5 @@
 .vs/
 *.log
 logs/
+source/*/References/
+
