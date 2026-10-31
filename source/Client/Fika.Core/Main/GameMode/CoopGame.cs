@@ -879,6 +879,9 @@ public sealed class CoopGame : BaseLocalGame<EftGamePlayerOwner>, IFikaGame, ICl
         // GroundLootPickup.NoteStuckPickup). The release stays exactly as it was.
         GroundLootPickup.DiagnoseStuckState(movementContext, stuckState, heldFor);
         GroundLootPickup.NoteStuckPickup(_localPlayer, stuckState, heldFor);
+        // The native pickup continuation (MovementContext.PickupAction) is lost when the take-item
+        // animation event never fires. Run it once before releasing the state.
+        global::Fika.Core.Main.Utils.PickupContinuationRepair.TryRepair(_localPlayer, movementContext, stuckState, heldFor);
         _logger.LogWarning($"Local player stayed in {stuckState} for more than {timeout} seconds; releasing the native interaction state");
         NativeInteractionRelease.Release(_localPlayer, "stuck-pickup-state");
     }
