@@ -2199,6 +2199,8 @@ public sealed class CoopGame : BaseLocalGame<EftGamePlayerOwner>, IFikaGame, ICl
         Fika.Core.Main.Utils.FikaRaidGate.Disarm("CoopGame.CleanUp");
         FikaBackendUtils.CleanUpVariables();
         BTRSide_Patches.Passengers.Clear();
+        // A pooled host operation must not survive into the next raid and time out there.
+        global::Fika.Core.Main.HostClasses.HostOperationWatchdog.Reset();
         // (analysis/transit-crash-unload) Last stop of a raid: nothing of this world may stay reachable.
         Fika.Core.Main.Utils.WorldLifecycle.MarkWorldTornDown("CoopGame.CleanUp");
     }

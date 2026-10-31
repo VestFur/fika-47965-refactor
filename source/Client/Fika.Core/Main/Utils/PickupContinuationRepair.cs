@@ -14,6 +14,7 @@ internal static class PickupContinuationRepair
 {
     private static IntPtr _lastPlayer;
     private static float _lastRepairAt;
+    private static int _repairCount;
 
     internal static void TryRepair(Player player, MovementContext movementContext, EPlayerState stuckState,
         float heldForSeconds)
@@ -33,7 +34,7 @@ internal static class PickupContinuationRepair
                 return;
             }
 
-            var now = UnityEngine.Time.time;
+            var now = UnityEngine.Time.unscaledTime;
             if (player.Pointer == _lastPlayer && now - _lastRepairAt < 1f)
             {
                 return;
@@ -41,15 +42,18 @@ internal static class PickupContinuationRepair
 
             _lastPlayer = player.Pointer;
             _lastRepairAt = now;
+            _repairCount++;
 
             // Detach first: a late animation event must not run the same continuation twice.
             movementContext.PickupAction = null;
             FikaGlobals.LogWarning($"[LootFix] found the lost pickup continuation " +
-                $"(player={player.PlayerId}, held={heldForSeconds:0.0}s); invoking it", "PickupRepair");
+                $"(player={player.PlayerId}, held={heldForSeconds:0.0}s, repairs={_repairCount}); invoking it",
+                "PickupRepair");
             try
             {
                 action.Invoke();
-                FikaGlobals.LogWarning("[LootFix] pickup continuation invoked", "PickupRepair");
+                FikaGlobals.LogWarning($"[LootFix] pickup continuation invoked (repairs={_repairCount})",
+                    "PickupRepair");
             }
             catch (Exception exception)
             {

@@ -11,6 +11,10 @@ namespace Fika.Core.Main.HostClasses;
 /// terminal result, the native EFT.PickUpState callback is never completed and the player stays in
 /// the pickup state until CoopGame's 5 s interaction watchdog releases it. This watchdog fails and
 /// releases the operation after 10 s, so a lost callback cannot lock pickup for the rest of the raid.
+///
+/// The handler is pooled and reused. The entry therefore stores the operation it was created for:
+/// an old entry whose handler already runs another operation is stale and must be dropped, never
+/// timed out against the new operation.
 /// </summary>
 internal static class HostOperationWatchdog
 {
@@ -19,6 +23,7 @@ internal static class HostOperationWatchdog
     private sealed class Entry
     {
         internal HostInventoryOperationHandler Handler;
+        internal EFT.InventoryLogic.Operations.AbstractOperation Operation;
         internal float Since;
         internal string Label;
     }
@@ -29,14 +34,20 @@ internal static class HostOperationWatchdog
     {
         try
         {
-            if (handler == null)
+            if (handler == null || handler.Operation == null)
             {
                 return;
             }
 
             lock (Pending)
             {
-                Pending.Add(new Entry { Handler = handler, Since = Time.unscaledTime, Label = label });
+                Pending.Add(new Entry
+                {
+                    Handler = handler,
+                    Operation = handler.Operation,
+                    Since = Time.unscaledTime,
+                    Label = label
+                });
             }
         }
         catch
@@ -48,7 +59,8 @@ internal static class HostOperationWatchdog
     {
         try
         {
-            List<Entry> snapshot;
+            var now = Time.unscaledTime;
+            List<Entry> expired = null;
             lock (Pending)
             {
                 if (Pending.Count == 0)
@@ -56,61 +68,90 @@ internal static class HostOperationWatchdog
                     return;
                 }
 
-                snapshot = new List<Entry>(Pending);
-            }
-
-            var now = Time.unscaledTime;
-            foreach (var entry in snapshot)
-            {
-                var handler = entry.Handler;
-                if (handler == null || handler.Completed || handler.Operation == null)
+                // Walk backwards and remove in place: this runs during ordinary host inventory traffic,
+                // so no per-frame snapshot copy. Only a real timeout allocates the expired list.
+                for (var i = Pending.Count - 1; i >= 0; i--)
                 {
-                    lock (Pending)
+                    var entry = Pending[i];
+                    var handler = entry.Handler;
+                    if (handler == null || handler.Completed ||
+                        !ReferenceEquals(handler.Operation, entry.Operation))
                     {
-                        Pending.Remove(entry);
+                        Pending.RemoveAt(i);
+                        continue;
                     }
 
-                    continue;
-                }
+                    if (now - entry.Since < TimeoutSeconds)
+                    {
+                        continue;
+                    }
 
-                if (now - entry.Since < TimeoutSeconds)
-                {
-                    continue;
-                }
-
-                lock (Pending)
-                {
-                    Pending.Remove(entry);
-                }
-
-                FikaGlobals.LogWarning($"[LootFix] host-op-timeout label={entry.Label} " +
-                    $"age={now - entry.Since:0.0}s", "HostOperationWatchdog");
-
-                var controller = handler.InventoryController;
-                try
-                {
-                    handler.Callback?.Fail("host operation timed out", 1);
-                }
-                catch
-                {
-                }
-
-                try
-                {
-                    handler.CancelDispatch();
-                }
-                catch
-                {
-                }
-
-                try
-                {
-                    NativeInteractionRelease.Release(controller?.FikaPlayer, "host-op-timeout");
-                }
-                catch
-                {
+                    Pending.RemoveAt(i);
+                    (expired ??= new List<Entry>()).Add(entry);
                 }
             }
+
+            if (expired == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < expired.Count; i++)
+            {
+                FailTimedOut(expired[i], now);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>Clears per-raid state so a pooled operation from a previous raid can never time out here.</summary>
+    internal static void Reset()
+    {
+        try
+        {
+            lock (Pending)
+            {
+                Pending.Clear();
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static void FailTimedOut(Entry entry, float now)
+    {
+        var handler = entry.Handler;
+        if (handler == null)
+        {
+            return;
+        }
+
+        FikaGlobals.LogWarning($"[LootFix] host-op-timeout label={entry.Label} " +
+            $"age={now - entry.Since:0.0}s", "HostOperationWatchdog");
+
+        var controller = handler.InventoryController;
+        try
+        {
+            handler.Callback?.Fail("host operation timed out", 1);
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            handler.CancelDispatch();
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            NativeInteractionRelease.Release(controller?.FikaPlayer, "host-op-timeout");
         }
         catch
         {

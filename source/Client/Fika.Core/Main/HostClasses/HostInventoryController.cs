@@ -101,6 +101,8 @@ public sealed class HostInventoryController : BaseInventoryController
             // completed, so every failure path has to fail it and release the interaction state.
             FikaGlobals.LogError($"[LootFix] host-operation threw class={operation?.GetIl2CppType().Name} " +
                 $"id={operation?.Id}: {exception}", "HandleOperation");
+            // Use the callback captured by this method, not handler.Callback: RunHostOperation may
+            // already have returned the pooled handler, and CancelDispatch/Dispose can clear its field.
             try { callback?.Fail($"host operation failed: {exception.Message}", 1); } catch { }
             try { NativeInteractionRelease.Release(_player, "host-operation-exception"); } catch { }
         }
